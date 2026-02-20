@@ -26,10 +26,8 @@ export class LectureLightSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', { text: 'LectureLight Pro Settings' });
-
 		new Setting(containerEl)
-			.setName('Target Duration')
+			.setName('Target duration')
 			.setDesc('Default target duration in minutes')
 			.addText(text => text
 				.setPlaceholder('30')
