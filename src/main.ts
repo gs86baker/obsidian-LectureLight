@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin } from 'obsidian';
+import { Notice, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS, LectureLightSettings, LectureLightSettingTab } from "./settings";
 
 export default class LectureLightPlugin extends Plugin {
@@ -8,8 +8,10 @@ export default class LectureLightPlugin extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('presentation', 'LectureLight Pro', (evt: MouseEvent) => {
-			new Notice('LectureLight Pro is loaded!');
+		// eslint-disable-next-line obsidianmd/ui/sentence-case
+		this.addRibbonIcon('presentation', 'LectureLight Pro', (_evt: MouseEvent) => {
+			// eslint-disable-next-line obsidianmd/ui/sentence-case
+			new Notice('LectureLight Pro loaded.');
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
@@ -17,11 +19,11 @@ export default class LectureLightPlugin extends Plugin {
 	}
 
 	onunload() {
-		console.log('Unloading LectureLight Pro');
+		console.debug('Unloading LectureLight Pro');
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData()) as LectureLightSettings;
 	}
 
 	async saveSettings() {
