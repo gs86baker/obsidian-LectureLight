@@ -338,18 +338,18 @@ export const PRESENTER_CSS = `
 	min-height: 0 !important;
 }
 
-.ll-presenter-root .ll-timer--ready   { background: #1a2e45 !important; }
-.ll-presenter-root .ll-timer--green   { background: #14532d !important; }
-.ll-presenter-root .ll-timer--yellow  { background: #78350f !important; }
-.ll-presenter-root .ll-timer--red     { background: #7f1d1d !important; animation: ll-pulse 0.8s ease-in-out infinite !important; }
+.ll-presenter-root .ll-timer--ready    { background: #1a2e45 !important; }
+.ll-presenter-root .ll-timer--green    { background: #059669 !important; }
+.ll-presenter-root .ll-timer--yellow   { background: #fc7e14 !important; }
+.ll-presenter-root .ll-timer--red      { background: #dc3444 !important; }
 .ll-presenter-root .ll-timer--overtime {
-	background: #7f1d1d !important;
-	animation: ll-urgent-pulse 0.5s ease-in-out infinite !important;
+	background: #dc3444 !important;
+	animation: ll-urgent-pulse 0.6s ease-in-out infinite !important;
 }
 
 @keyframes ll-urgent-pulse {
-	0%, 100% { background: #7f1d1d; }
-	50%       { background: #9a3412; }
+	0%, 100% { background: #dc3444; }
+	50%       { background: #fc7e14; }
 }
 
 .ll-presenter-root .ll-timer-label {
