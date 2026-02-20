@@ -11,6 +11,12 @@ const STAGE_STYLES = `
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Show cursor while windowed so the user can interact with the hint bar.
+       Hide it only when truly fullscreen (audience view). */
+    cursor: default;
+  }
+
+  .ls-viewport:fullscreen {
     cursor: none;
   }
 
@@ -80,6 +86,45 @@ const STAGE_STYLES = `
   .ls-content pre code { background: none; padding: 0; border-radius: 0; font-size: 36px; line-height: 1.5; }
   .ls-content img { max-width: 100%; max-height: 800px; image-rendering: high-quality; border-radius: 12px; }
 
+  /* ── Fullscreen hint bar ── */
+
+  /* Gradient + button sit above the canvas, anchored to the viewport */
+  .ls-fs-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 28px;
+    /* Fade from transparent to dark so the slide content is still visible */
+    background: linear-gradient(transparent, rgba(0,0,0,0.75));
+    /* pointer-events: none lets clicks pass through the gradient to the canvas */
+    pointer-events: none;
+  }
+
+  .ls-fs-btn {
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 99px;
+    padding: 9px 22px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  }
+
+  .ls-fs-btn:hover {
+    background: rgba(255,255,255,0.22);
+    border-color: rgba(255,255,255,0.5);
+  }
 `;
 
 export class LectureLightStageView extends ItemView {
@@ -114,6 +159,14 @@ export class LectureLightStageView extends ItemView {
 
 		const content = canvas.createDiv({ cls: 'ls-content' });
 
+		// Fullscreen hint bar — sits over the viewport (not inside the scaled canvas)
+		// so its size is unaffected by canvas scale. Hidden automatically when fullscreen.
+		const fsBar = viewport.createDiv({ cls: 'ls-fs-bar' });
+		const fsBtn = fsBar.createEl('button', {
+			cls:  'ls-fs-btn',
+			text: '⊡  Go fullscreen  ·  F',
+		});
+
 		// ── Scale canvas to fill window at any resolution ─────────────────────
 		const rescale = (): void => {
 			const scale = Math.min(win.innerWidth / 1920, win.innerHeight / 1080);
@@ -134,19 +187,32 @@ export class LectureLightStageView extends ItemView {
 			content.innerHTML     = msg.htmlContent ?? '';
 		});
 
-		// ── Fullscreen toggle: click anywhere or press F ──────────────────────
-		// Request fullscreen on the viewport element (not documentElement) so
-		// the request originates from within Obsidian's popout window context.
-		// Listen on doc so clicks on injected slide HTML always reach the handler.
+		// ── Fullscreen helpers ────────────────────────────────────────────────
+		const enterFullscreen = (): void => {
+			viewport.requestFullscreen().catch(() => { /* browser may deny on some platforms */ });
+		};
+		const exitFullscreen = (): void => {
+			doc.exitFullscreen().catch(() => { /* ignored */ });
+		};
 		const toggleFullscreen = (): void => {
-			if (!doc.fullscreenElement) {
-				viewport.requestFullscreen().catch(() => { /* ignored */ });
-			} else {
-				doc.exitFullscreen().catch(() => { /* ignored */ });
-			}
+			if (doc.fullscreenElement) exitFullscreen();
+			else enterFullscreen();
 		};
 
-		this.registerDomEvent(doc as Document, 'click', toggleFullscreen);
+		// Show/hide hint bar as fullscreen state changes.
+		// This handles both our own toggle and the user pressing Esc.
+		this.registerDomEvent(doc as Document, 'fullscreenchange', () => {
+			fsBar.style.display = doc.fullscreenElement ? 'none' : 'flex';
+		});
+
+		// Explicit button — the primary affordance, especially after moving
+		// the window to a different display and clicking to re-enter fullscreen.
+		this.registerDomEvent(fsBtn, 'click', (e: MouseEvent) => {
+			e.stopPropagation();
+			enterFullscreen();
+		});
+
+		// F key toggles fullscreen from anywhere in the window
 		this.registerDomEvent(doc as Document, 'keydown', (e: KeyboardEvent) => {
 			if (e.key === 'f' || e.key === 'F') toggleFullscreen();
 		});
