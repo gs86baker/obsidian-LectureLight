@@ -498,4 +498,45 @@ export const PRESENTER_CSS = `
 	font-size: 12px !important;
 	color: #93c5fd !important;
 }
+
+/* ── Speaker notes ── */
+
+.ll-presenter-root .ll-speaker-notes {
+	background: #071a1a !important;
+	border-left: 4px solid #0d9488 !important;
+	border-radius: 0 6px 6px 0 !important;
+	padding: 12px 16px !important;
+	margin: 16px 0 28px !important;
+}
+
+.ll-presenter-root .ll-speaker-notes-label {
+	display: block !important;
+	font-size: 9px !important;
+	font-weight: 800 !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.14em !important;
+	color: #0d9488 !important;
+	margin-bottom: 8px !important;
+}
+
+.ll-presenter-root .ll-speaker-notes-body {
+	font-size: 13px !important;
+	line-height: 1.7 !important;
+	color: #94a3b8 !important;
+}
+
+.ll-presenter-root .ll-speaker-notes-body p          { margin: 0 0 10px !important; }
+.ll-presenter-root .ll-speaker-notes-body p:last-child { margin-bottom: 0 !important; }
+.ll-presenter-root .ll-speaker-notes-body ul,
+.ll-presenter-root .ll-speaker-notes-body ol          { padding-left: 22px !important; margin: 6px 0 10px !important; }
+.ll-presenter-root .ll-speaker-notes-body li          { margin-bottom: 4px !important; }
+.ll-presenter-root .ll-speaker-notes-body strong      { color: #cbd5e1 !important; }
+
+/* ── Stage theme toggle ── */
+
+.ll-presenter-root .ll-btn-theme-active {
+	background: #1e3a5f !important;
+	border-color: #60a5fa !important;
+	color: #bfdbfe !important;
+}
 `;

@@ -90,6 +90,24 @@ const STAGE_STYLES = `
   .ls-content pre code { background: none; padding: 0; border-radius: 0; font-size: 36px; line-height: 1.5; }
   .ls-content img { max-width: 100%; max-height: 800px; image-rendering: high-quality; border-radius: 12px; }
 
+  /* ── Light theme ── */
+
+  .ls-canvas.ls-light { background: #f8fafc; }
+
+  .ls-canvas.ls-light .ls-content { color: #0f172a; }
+  .ls-canvas.ls-light .ls-content h1 { color: #0f172a; }
+  .ls-canvas.ls-light .ls-content h2 { color: #1e293b; }
+  .ls-canvas.ls-light .ls-content h3 { color: #334155; }
+  .ls-canvas.ls-light .ls-content code {
+    background: rgba(0,0,0,0.07);
+  }
+  .ls-canvas.ls-light .ls-content pre {
+    background: rgba(0,0,0,0.05);
+    border-color: rgba(0,0,0,0.12);
+  }
+
+  .ls-canvas.ls-light .ls-waiting { color: rgba(0,0,0,0.25); }
+
   /* ── Fullscreen hint bar ── */
 
   /* Sits above the canvas inside the viewport, always visible when windowed.
@@ -185,12 +203,15 @@ export class LectureLightStageView extends ItemView {
 		this.channel = ch;
 
 		ch.addEventListener('message', (e: MessageEvent) => {
-			const msg = e.data as { type: string; htmlContent: string; index: number; total: number };
-			if (msg.type !== 'slide-change') return;
-			waiting.addClass('ls-hidden');
-			content.addClass('ls-visible');
-			// eslint-disable-next-line @microsoft/sdl/no-inner-html
-			content.innerHTML = DOMPurify.sanitize(msg.htmlContent ?? '');
+			const msg = e.data as { type: string; htmlContent?: string; light?: boolean };
+			if (msg.type === 'slide-change') {
+				waiting.addClass('ls-hidden');
+				content.addClass('ls-visible');
+				// eslint-disable-next-line @microsoft/sdl/no-inner-html
+				content.innerHTML = DOMPurify.sanitize(msg.htmlContent ?? '');
+			} else if (msg.type === 'theme-change') {
+				canvas.toggleClass('ls-light', msg.light ?? false);
+			}
 		});
 
 		// ── Fullscreen helpers ────────────────────────────────────────────────

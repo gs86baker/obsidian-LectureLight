@@ -38,7 +38,7 @@ export const Teleprompter = React.memo<TeleprompterProps>(function Teleprompter(
 						onClick={() => onSlideSelect(index)}
 						onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSlideSelect(index); }}
 					>
-						<span className="ll-slide-trigger-meta">Push to stage</span>
+						<span className="ll-slide-trigger-meta">Slide {index + 1} of {slides.length}</span>
 						<span className="ll-slide-trigger-title">
 							{slide.label ?? `Slide ${index + 1}`}
 						</span>
@@ -48,6 +48,15 @@ export const Teleprompter = React.memo<TeleprompterProps>(function Teleprompter(
 							</span>
 						)}
 					</div>
+					{slide.speakerNotesHtml && (
+						<div className="ll-speaker-notes">
+							<span className="ll-speaker-notes-label">Speaker notes</span>
+							<div
+								className="ll-speaker-notes-body"
+								dangerouslySetInnerHTML={{ __html: slide.speakerNotesHtml }}
+							/>
+						</div>
+					)}
 				</React.Fragment>
 			))}
 		</div>

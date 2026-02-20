@@ -3,7 +3,8 @@ export interface Slide {
 	label?: string;
 	rawMarkdown: string;   // Content inside :::slide ... ::: delimiters
 	htmlContent: string;   // DOMPurify-sanitized HTML
-	notes: string;         // Teleprompter script preceding this slide
+	notes: string;              // Teleprompter prose preceding this slide
+	speakerNotesHtml?: string;  // HTML from :::notes block — presenter-only, never shown on stage
 	media: MediaAsset[];
 	layout: 'standard' | 'bleed';
 }
