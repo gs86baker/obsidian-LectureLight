@@ -1,0 +1,11 @@
+{
+	"id": "obsidian-lecturelight",
+	"name": "LectureLight Pro",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Professional presentation and teleprompter integration for Obsidian.",
+	"author": "Greg Baker",
+	"authorUrl": "https://greggyspace.com",
+	"fundingUrl": "https://obsidian.md/pricing",
+	"isDesktopOnly": false
+}
