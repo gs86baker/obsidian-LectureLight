@@ -239,6 +239,61 @@ describe('parseMarkdownToSlides', () => {
 		});
 	});
 
+	describe(':::notes speaker notes', () => {
+		const FIXTURE_NOTES_POSITIONAL = `:::slide [Intro]
+# Hello
+:::
+
+:::notes
+These are positional notes for the intro slide.
+:::
+
+:::slide [Second]
+# Second
+:::
+`;
+
+		const FIXTURE_NOTES_LABELED = `:::slide [Intro]
+# Hello
+:::
+
+:::slide [Second]
+# Second
+:::
+
+:::notes [Intro]
+Label-matched notes for intro.
+:::
+`;
+
+		it('assigns positional :::notes to the preceding slide', () => {
+			const result = parseMarkdownToSlides(FIXTURE_NOTES_POSITIONAL);
+			expect(result.slides[0]?.speakerNotesHtml).toBeDefined();
+			expect(result.slides[0]?.speakerNotesHtml).toContain('positional notes');
+		});
+
+		it('does not assign positional notes to a slide that did not precede the block', () => {
+			const result = parseMarkdownToSlides(FIXTURE_NOTES_POSITIONAL);
+			expect(result.slides[1]?.speakerNotesHtml).toBeUndefined();
+		});
+
+		it('assigns label-matched :::notes [Label] to the correct slide', () => {
+			const result = parseMarkdownToSlides(FIXTURE_NOTES_LABELED);
+			expect(result.slides[0]?.speakerNotesHtml).toBeDefined();
+			expect(result.slides[0]?.speakerNotesHtml).toContain('Label-matched');
+		});
+
+		it('does not set speakerNotesHtml on unmatched slides', () => {
+			const result = parseMarkdownToSlides(FIXTURE_NOTES_LABELED);
+			expect(result.slides[1]?.speakerNotesHtml).toBeUndefined();
+		});
+
+		it('does not include :::notes content in slide teleprompter notes', () => {
+			const result = parseMarkdownToSlides(FIXTURE_NOTES_POSITIONAL);
+			expect(result.slides[0]?.notes).not.toContain('positional notes');
+		});
+	});
+
 	describe('robustness', () => {
 		it('does not crash or loop on an unclosed :::slide block', () => {
 			const input = `:::slide [Unclosed]\n# Content with no closing fence`;
@@ -281,6 +336,12 @@ describe('countSpeakableWords', () => {
 	it('does not count words inside :::lecturelight config blocks', () => {
 		const input = `:::lecturelight\ntarget: 30\nwarning: 5\n:::\nSpoken intro.`;
 		expect(countSpeakableWords(input)).toBe(2); // "Spoken intro."
+	});
+
+	it('does not count words inside :::notes blocks', () => {
+		const input = `Before.\n:::notes\nThis should not count.\n:::\nAfter.`;
+		// "Before." = 1, "After." = 1
+		expect(countSpeakableWords(input)).toBe(2);
 	});
 });
 

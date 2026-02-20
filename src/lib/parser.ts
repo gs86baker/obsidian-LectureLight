@@ -28,7 +28,7 @@ export function countSpeakableWords(markdown: string): number {
 	if (!markdown) return 0;
 
 	const lines = markdown.split('\n');
-	let mode: 'NOTES' | 'SLIDE' | 'CONFIG' = 'NOTES';
+	let mode: 'NOTES' | 'SLIDE' | 'CONFIG' | 'SPEAKER_NOTES' = 'NOTES';
 	const notesText: string[] = [];
 
 	for (const line of lines) {
@@ -39,12 +39,12 @@ export function countSpeakableWords(markdown: string): number {
 				mode = 'SLIDE';
 			} else if (trimmed.match(/^:::\s*lecturelight/)) {
 				mode = 'CONFIG';
+			} else if (trimmed.match(/^:::\s*notes/)) {
+				mode = 'SPEAKER_NOTES';
 			} else {
 				notesText.push(line);
 			}
-		} else if (mode === 'CONFIG') {
-			if (trimmed === ':::') mode = 'NOTES';
-		} else if (mode === 'SLIDE') {
+		} else if (mode === 'CONFIG' || mode === 'SLIDE' || mode === 'SPEAKER_NOTES') {
 			if (trimmed === ':::') mode = 'NOTES';
 		}
 	}
@@ -119,12 +119,30 @@ export function parseMarkdownToSlides(markdown: string): ParseResult {
 	}
 
 	// State machine: NOTES collects teleprompter prose, SLIDE collects slide content,
-	// CONFIG silently consumes the :::lecturelight block (already extracted via regex)
-	let mode: 'NOTES' | 'SLIDE' | 'CONFIG' = 'NOTES';
+	// CONFIG silently consumes the :::lecturelight block (already extracted via regex),
+	// SPEAKER_NOTES collects presenter-only notes attached to a slide
+	let mode: 'NOTES' | 'SLIDE' | 'CONFIG' | 'SPEAKER_NOTES' = 'NOTES';
 	let currentNotes: string[] = [];
 	let currentSlideRaw: string[] = [];
 	let currentSlideLabel = '';
 	let currentSlideBleed = false;
+	let currentNotesRaw: string[] = [];
+	let currentNotesLabel = '';
+	const speakerNotesMap = new Map<string, string>();
+
+	const flushSpeakerNotes = () => {
+		const raw = currentNotesRaw.join('\n').trim();
+		if (raw) {
+			const html = DOMPurify.sanitize(marked.parse(raw) as string);
+			if (currentNotesLabel) {
+				speakerNotesMap.set(currentNotesLabel, html);
+			} else if (slides.length > 0) {
+				slides[slides.length - 1]!.speakerNotesHtml = html;
+			}
+		}
+		currentNotesRaw = [];
+		currentNotesLabel = '';
+	};
 
 	const flushSlide = () => {
 		const rawContent = currentSlideRaw.join('\n').trim();
@@ -170,6 +188,7 @@ export function parseMarkdownToSlides(markdown: string): ParseResult {
 			// Match: :::slide [Optional Label] [bleed]
 			const slideStart = trimmed.match(/^:::\s*slide(?:\s*\[([^\]]*)\])?(?:\s+(bleed))?/);
 			const configStart = trimmed.match(/^:::\s*lecturelight/);
+			const notesStart = trimmed.match(/^:::\s*notes(?:\s*\[([^\]]*)\])?/);
 			if (slideStart) {
 				mode = 'SLIDE';
 				currentSlideLabel = slideStart[1] ?? '';
@@ -177,6 +196,10 @@ export function parseMarkdownToSlides(markdown: string): ParseResult {
 			} else if (configStart) {
 				// Silently consume the config block — values already extracted via regex above
 				mode = 'CONFIG';
+			} else if (notesStart) {
+				mode = 'SPEAKER_NOTES';
+				currentNotesLabel = notesStart[1] ?? '';
+				currentNotesRaw = [];
 			} else {
 				currentNotes.push(line);
 			}
@@ -189,7 +212,20 @@ export function parseMarkdownToSlides(markdown: string): ParseResult {
 			} else {
 				currentSlideRaw.push(line);
 			}
+		} else if (mode === 'SPEAKER_NOTES') {
+			if (trimmed === ':::') {
+				flushSpeakerNotes();
+				mode = 'NOTES';
+			} else {
+				currentNotesRaw.push(line);
+			}
 		}
+	}
+
+	// Assign label-matched speaker notes to slides
+	for (const [label, html] of speakerNotesMap.entries()) {
+		const slide = slides.find(s => s.label === label);
+		if (slide) slide.speakerNotesHtml = html;
 	}
 
 	return { slides, timerSettings };

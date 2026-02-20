@@ -20,6 +20,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 	const [isFilmStripVisible, setIsFilmStripVisible] = useState(true);
 	const [teleprompterFontSize, setTeleprompterFontSize] = useState(20);
 	const [isStageOpen, setIsStageOpen] = useState(false);
+	const [stageLightTheme, setStageLightTheme] = useState(false);
 
 	const channelRef = useRef<BroadcastChannel | null>(null);
 
@@ -90,6 +91,47 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 		});
 	}, [currentSlideIndex, currentSlide, slides.length, app]);
 
+	// Theme sync — send theme-change whenever stageLightTheme toggles
+	useEffect(() => {
+		if (!channelRef.current) return;
+		if (app.workspace.getLeavesOfType(VIEW_TYPE_STAGE).length === 0) return;
+		channelRef.current.postMessage({
+			type:  'theme-change',
+			light: stageLightTheme,
+		});
+	}, [stageLightTheme, app]);
+
+	const goToSlide = useCallback((index: number) => {
+		if (index < 0 || index >= slides.length) return;
+		setCurrentSlideIndex(index);
+		// Reset timer when navigating back to the first slide during an active session
+		if (index === 0 && isSessionActive) {
+			setElapsedSeconds(0);
+		}
+	}, [slides.length, isSessionActive]);
+
+	// Keyboard navigation — arrow keys and Page Up/Down
+	useEffect(() => {
+		const handler = (e: KeyboardEvent): void => {
+			// Ignore when focus is inside an input or contenteditable
+			const target = e.target as HTMLElement;
+			if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+			if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+				e.preventDefault();
+				setCurrentSlideIndex(i => Math.min(i + 1, slides.length - 1));
+			} else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+				e.preventDefault();
+				setCurrentSlideIndex(i => {
+					const next = Math.max(i - 1, 0);
+					if (next === 0 && isSessionActive) setElapsedSeconds(0);
+					return next;
+				});
+			}
+		};
+		document.addEventListener('keydown', handler);
+		return () => document.removeEventListener('keydown', handler);
+	}, [slides.length, isSessionActive]);
+
 	const openStage = useCallback(async () => {
 		// Focus existing stage leaf if already open
 		const existing = app.workspace.getLeavesOfType(VIEW_TYPE_STAGE);
@@ -103,7 +145,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 		await leaf.setViewState({ type: VIEW_TYPE_STAGE, active: true });
 		setIsStageOpen(true);
 
-		// Send current slide once the view has had time to set up its channel
+		// Send current slide and theme once the view has had time to set up its channel
 		setTimeout(() => {
 			if (!channelRef.current || !currentSlide) return;
 			channelRef.current.postMessage({
@@ -113,14 +155,16 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 				total:       slides.length,
 				label:       currentSlide.label,
 			});
+			channelRef.current.postMessage({
+				type:  'theme-change',
+				light: stageLightTheme,
+			});
 		}, 800);
-	}, [app, currentSlide, currentSlideIndex, slides.length]);
+	}, [app, currentSlide, currentSlideIndex, slides.length, stageLightTheme]);
 
-	const goToSlide = useCallback((index: number) => {
-		if (index >= 0 && index < slides.length) {
-			setCurrentSlideIndex(index);
-		}
-	}, [slides.length]);
+	const toggleTheme = useCallback(() => {
+		setStageLightTheme(t => !t);
+	}, []);
 
 	if (!parseResult || slides.length === 0) {
 		return (
@@ -172,6 +216,11 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 						onClick={() => setElapsedSeconds(0)}
 						aria-label="Reset timer"
 					>↺</button>
+					<button
+						className={`ll-btn ll-btn-sm${stageLightTheme ? ' ll-btn-theme-active' : ''}`}
+						onClick={toggleTheme}
+						aria-label="Toggle stage theme"
+					>☀</button>
 					<button
 						className={`ll-btn ll-btn-sm${isStageOpen ? ' ll-btn-stage-active' : ''}`}
 						onClick={() => { void openStage(); }}
