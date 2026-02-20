@@ -1,28 +1,68 @@
 # Obsidian LectureLight Pro
 
-Professional presentation and teleprompter integration for Obsidian. 
+Professional presentation console for Obsidian. Turn any Markdown note into a slide deck with a built-in teleprompter, traffic-light timer, film strip, and audience-facing stage window.
 
-This plugin bridges the **LectureLight Pro** interface into your Obsidian vault, allowing you to turn any Markdown note into a professional slide deck with integrated audio recording, canvas-scaled slides, and a real-time teleprompter.
+## Features
 
-## Features (Planned)
+- **Slide authoring in Markdown** — wrap content in `:::slide [Label] … :::` fenced blocks; the plugin parses them live as you edit.
+- **Presenter console** — a dedicated side panel showing:
+  - Slide navigation (← →) with keyboard shortcuts
+  - Full teleprompter script with per-slide sections and click-to-jump
+  - Sidebar preview (16:9 thumbnail of the current slide)
+  - Film strip (collapsible row of all slide thumbnails)
+- **Traffic-light timer** — green / amber / red background signals configured per note (`:::lecturelight … :::` block) or via plugin settings.
+- **Stage window** — click **⊡ Stage** to open a separate audience-facing window in its own popout. The stage:
+  - Scales to any resolution from 1280×720 to 4K using GPU-accelerated CSS transforms
+  - Updates in real time as you navigate slides (via `BroadcastChannel`)
+  - Toggles fullscreen on click or **F** key
+  - Button pulses amber while the stage is live
 
-- **Canvas-Scaled Slides**: Strict 16:9 aspect ratio using Container Query Width (`cqw`) for perfect scaling on any display.
-- **Live Sync**: Instant updates from your Obsidian note to the presenter view.
-- **Integrated Recording**: Capture your lecture audio directly to your vault.
-- **Teleprompter**: High-performance interactive script with slide triggers.
+## Slide syntax
+
+~~~markdown
+:::slide Introduction
+# Hello, World
+
+Opening remarks go here.
+:::
+
+:::slide Key Points
+- First point
+- Second point
+:::
+~~~
+
+## Timer configuration
+
+Add a `:::lecturelight` block anywhere in your note:
+
+~~~markdown
+:::lecturelight
+target: 45
+warning: 40
+wrapup: 43
+:::
+~~~
+
+Values are in minutes. Falls back to plugin settings if the block is absent.
 
 ## Installation
 
-1. Download `main.js`, `manifest.json`, and `styles.css` from the latest release.
-2. Create a folder named `obsidian-lecturelight` in your vault's `.obsidian/plugins/` directory.
-3. Move the downloaded files into that folder.
-4. Reload Obsidian and enable the plugin in **Settings → Community plugins**.
+1. Download `main.js` and `manifest.json` from the latest release.
+2. Create a folder named `lecturelight` in your vault's `.obsidian/plugins/` directory.
+3. Copy the downloaded files into that folder.
+4. Reload Obsidian and enable **LectureLight Pro** in **Settings → Community plugins**.
 
 ## Development
 
-1. `npm install`
-2. `npm run dev` to start compilation in watch mode.
-3. Make changes to `src/main.ts` or other files.
+```bash
+npm install
+npm run dev      # watch mode
+npm run build    # production build
+npm test         # vitest unit tests
+```
+
+Copy `main.js` and `manifest.json` into your vault's plugin folder after each build to test.
 
 ## License
 
