@@ -1,24 +1,53 @@
-import { MarkdownView, Notice, Plugin } from 'obsidian';
+import { MarkdownView, Plugin, WorkspaceLeaf } from 'obsidian';
 import { DEFAULT_SETTINGS, LectureLightSettings, LectureLightSettingTab } from "./settings";
 import { parseMarkdownToSlides } from "./lib/parser";
+import { resolveWikilinks } from "./lib/wikilinks";
 import { ParseResult } from "./types";
+import { LectureLightView, VIEW_TYPE_PRESENTER } from "./view";
+import { LectureLightStageView, VIEW_TYPE_STAGE } from "./stageView";
+import { PRESENTER_CSS } from "./presenterStyles";
 
 export default class LectureLightPlugin extends Plugin {
 	settings: LectureLightSettings;
 
-	// Holds the most recent parse result; consumed by LectureLightView in Phase C
+	// Holds the most recent parse result; consumed by LectureLightView
 	lastParseResult: ParseResult | null = null;
 
 	async onload() {
 		await this.loadSettings();
 
+		// Inject presenter styles via JS so they're always in sync with main.js
+		const styleEl = document.createElement('style');
+		styleEl.id = 'll-presenter-styles';
+		styleEl.textContent = PRESENTER_CSS;
+		document.head.appendChild(styleEl);
+		this.register(() => styleEl.remove());
+
+		// Register the presenter view
+		this.registerView(
+			VIEW_TYPE_PRESENTER,
+			(leaf: WorkspaceLeaf) => new LectureLightView(leaf, this)
+		);
+
+		// Register the stage (audience) view
+		this.registerView(
+			VIEW_TYPE_STAGE,
+			(leaf: WorkspaceLeaf) => new LectureLightStageView(leaf)
+		);
+
 		// eslint-disable-next-line obsidianmd/ui/sentence-case
 		this.addRibbonIcon('presentation', 'LectureLight Pro', (_evt: MouseEvent) => {
-			// eslint-disable-next-line obsidianmd/ui/sentence-case
-			new Notice('LectureLight Pro loaded.');
+			void this.activateView();
 		});
 
 		this.addSettingTab(new LectureLightSettingTab(this.app, this));
+
+		// eslint-disable-next-line obsidianmd/ui/sentence-case
+		this.addCommand({
+			id: 'open-presenter',
+			name: 'Open presenter console',
+			callback: () => { void this.activateView(); },
+		});
 
 		// Re-parse when the user switches to a different note
 		this.registerEvent(
@@ -38,23 +67,37 @@ export default class LectureLightPlugin extends Plugin {
 		);
 
 		// Parse immediately in case a note is already open when the plugin loads
-		void this.parseActiveNote();
+		this.app.workspace.onLayoutReady(() => {
+			void this.parseActiveNote();
+		});
 	}
 
 	onunload() {
-		console.debug('Unloading LectureLight Pro');
+		console.debug('[LectureLight] Unloading LectureLight Pro');
+	}
+
+	async activateView(): Promise<void> {
+		const { workspace } = this.app;
+		let leaf = workspace.getLeavesOfType(VIEW_TYPE_PRESENTER)[0];
+		if (!leaf) {
+			leaf = workspace.getLeaf('tab');
+			await leaf.setViewState({ type: VIEW_TYPE_PRESENTER, active: true });
+		}
+		workspace.revealLeaf(leaf);
 	}
 
 	async parseActiveNote(): Promise<void> {
 		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 		if (!activeView?.file) {
-			this.lastParseResult = null;
+			// No markdown note is active (e.g. the presenter tab itself is focused).
+			// Retain the last parse result so the presenter keeps its slides visible.
 			return;
 		}
 
 		try {
 			const content = await this.app.vault.read(activeView.file);
-			const result = parseMarkdownToSlides(content);
+			const resolved = resolveWikilinks(content, this.app);
+			const result = parseMarkdownToSlides(resolved);
 			this.lastParseResult = result;
 			console.debug(
 				`[LectureLight] Parsed "${activeView.file.basename}":`,
@@ -63,9 +106,18 @@ export default class LectureLightPlugin extends Plugin {
 					? `timer: ${result.timerSettings.targetMinutes}min target`
 					: 'no timer config (will use settings defaults)'
 			);
+			this.notifyViews();
 		} catch (e) {
 			console.error('[LectureLight] Failed to read or parse note:', e);
 		}
+	}
+
+	private notifyViews(): void {
+		this.app.workspace.getLeavesOfType(VIEW_TYPE_PRESENTER).forEach(leaf => {
+			if (leaf.view instanceof LectureLightView) {
+				leaf.view.updatePresentation();
+			}
+		});
 	}
 
 	async loadSettings() {
