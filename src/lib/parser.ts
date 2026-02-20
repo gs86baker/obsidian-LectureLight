@@ -118,8 +118,9 @@ export function parseMarkdownToSlides(markdown: string): ParseResult {
 		};
 	}
 
-	// State machine: NOTES collects teleprompter prose, SLIDE collects slide content
-	let mode: 'NOTES' | 'SLIDE' = 'NOTES';
+	// State machine: NOTES collects teleprompter prose, SLIDE collects slide content,
+	// CONFIG silently consumes the :::lecturelight block (already extracted via regex)
+	let mode: 'NOTES' | 'SLIDE' | 'CONFIG' = 'NOTES';
 	let currentNotes: string[] = [];
 	let currentSlideRaw: string[] = [];
 	let currentSlideLabel = '';
@@ -168,15 +169,19 @@ export function parseMarkdownToSlides(markdown: string): ParseResult {
 		if (mode === 'NOTES') {
 			// Match: :::slide [Optional Label] [bleed]
 			const slideStart = trimmed.match(/^:::\s*slide(?:\s*\[([^\]]*)\])?(?:\s+(bleed))?/);
+			const configStart = trimmed.match(/^:::\s*lecturelight/);
 			if (slideStart) {
 				mode = 'SLIDE';
 				currentSlideLabel = slideStart[1] ?? '';
 				currentSlideBleed = slideStart[2] === 'bleed';
+			} else if (configStart) {
+				// Silently consume the config block — values already extracted via regex above
+				mode = 'CONFIG';
 			} else {
-				// All prose (including :::lecturelight config lines) accumulates
-				// as teleprompter notes; config is extracted via regex above
 				currentNotes.push(line);
 			}
+		} else if (mode === 'CONFIG') {
+			if (trimmed === ':::') mode = 'NOTES';
 		} else if (mode === 'SLIDE') {
 			if (trimmed === ':::') {
 				flushSlide();
