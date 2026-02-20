@@ -1,4 +1,5 @@
-import { ItemView, WorkspaceLeaf } from 'obsidian';
+import { ItemView } from 'obsidian';
+import DOMPurify from 'dompurify';
 
 export const VIEW_TYPE_STAGE = 'lecturelight-stage';
 
@@ -16,9 +17,9 @@ const STAGE_STYLES = `
     cursor: default;
   }
 
-  .ls-viewport:fullscreen {
-    cursor: none;
-  }
+  /* Hide cursor and fullscreen bar when the viewport is in OS fullscreen */
+  .ls-viewport:fullscreen { cursor: none; }
+  .ls-viewport:fullscreen .ls-fs-bar { display: none; }
 
   .ls-canvas {
     width: 1920px;
@@ -47,6 +48,7 @@ const STAGE_STYLES = `
   }
 
   .ls-waiting-icon { font-size: 120px; opacity: 0.4; }
+  .ls-waiting.ls-hidden { display: none; }
 
   .ls-content {
     position: absolute;
@@ -59,6 +61,7 @@ const STAGE_STYLES = `
     overflow: hidden;
     display: none;
   }
+  .ls-content.ls-visible { display: block; }
 
   .ls-content h1 { font-size: 96px; font-weight: 900; line-height: 1.1; margin: 0 0 32px; color: #f8fafc; }
   .ls-content h2 { font-size: 72px; font-weight: 800; line-height: 1.15; margin: 0 0 24px; color: #e2e8f0; }
@@ -88,7 +91,8 @@ const STAGE_STYLES = `
 
   /* ── Fullscreen hint bar ── */
 
-  /* Gradient + button sit above the canvas, anchored to the viewport */
+  /* Sits above the canvas inside the viewport, always visible when windowed.
+     CSS :fullscreen rule above hides it automatically when in fullscreen. */
   .ls-fs-bar {
     position: absolute;
     bottom: 0;
@@ -98,9 +102,7 @@ const STAGE_STYLES = `
     align-items: flex-end;
     justify-content: center;
     padding-bottom: 28px;
-    /* Fade from transparent to dark so the slide content is still visible */
     background: linear-gradient(transparent, rgba(0,0,0,0.75));
-    /* pointer-events: none lets clicks pass through the gradient to the canvas */
     pointer-events: none;
   }
 
@@ -159,11 +161,13 @@ export class LectureLightStageView extends ItemView {
 
 		const content = canvas.createDiv({ cls: 'ls-content' });
 
-		// Fullscreen hint bar — sits over the viewport (not inside the scaled canvas)
-		// so its size is unaffected by canvas scale. Hidden automatically when fullscreen.
+		// Fullscreen hint bar — hidden by CSS when :fullscreen, visible otherwise.
+		// No JS show/hide needed; toggling is handled entirely by the CSS rule
+		// `.ls-viewport:fullscreen .ls-fs-bar { display: none }` above.
 		const fsBar = viewport.createDiv({ cls: 'ls-fs-bar' });
 		const fsBtn = fsBar.createEl('button', {
 			cls:  'ls-fs-btn',
+			// eslint-disable-next-line obsidianmd/ui/sentence-case
 			text: '⊡  Go fullscreen  ·  F',
 		});
 
@@ -173,7 +177,7 @@ export class LectureLightStageView extends ItemView {
 			canvas.style.transform = `scale(${scale})`;
 		};
 		rescale();
-		this.registerDomEvent(win as Window & typeof globalThis, 'resize', rescale);
+		this.registerDomEvent(win, 'resize', rescale);
 
 		// ── BroadcastChannel ──────────────────────────────────────────────────
 		const ch = new BroadcastChannel('lecturelight-stage');
@@ -182,38 +186,29 @@ export class LectureLightStageView extends ItemView {
 		ch.addEventListener('message', (e: MessageEvent) => {
 			const msg = e.data as { type: string; htmlContent: string; index: number; total: number };
 			if (msg.type !== 'slide-change') return;
-			waiting.style.display = 'none';
-			content.style.display = 'block';
-			content.innerHTML     = msg.htmlContent ?? '';
+			waiting.addClass('ls-hidden');
+			content.addClass('ls-visible');
+			// eslint-disable-next-line @microsoft/sdl/no-inner-html
+			content.innerHTML = DOMPurify.sanitize(msg.htmlContent ?? '');
 		});
 
 		// ── Fullscreen helpers ────────────────────────────────────────────────
 		const enterFullscreen = (): void => {
 			viewport.requestFullscreen().catch(() => { /* browser may deny on some platforms */ });
 		};
-		const exitFullscreen = (): void => {
-			doc.exitFullscreen().catch(() => { /* ignored */ });
-		};
 		const toggleFullscreen = (): void => {
-			if (doc.fullscreenElement) exitFullscreen();
+			if (doc.fullscreenElement) doc.exitFullscreen().catch(() => { /* ignored */ });
 			else enterFullscreen();
 		};
 
-		// Show/hide hint bar as fullscreen state changes.
-		// This handles both our own toggle and the user pressing Esc.
-		this.registerDomEvent(doc as Document, 'fullscreenchange', () => {
-			fsBar.style.display = doc.fullscreenElement ? 'none' : 'flex';
-		});
-
-		// Explicit button — the primary affordance, especially after moving
-		// the window to a different display and clicking to re-enter fullscreen.
+		// Button is the primary affordance (especially after moving to a new display)
 		this.registerDomEvent(fsBtn, 'click', (e: MouseEvent) => {
 			e.stopPropagation();
 			enterFullscreen();
 		});
 
 		// F key toggles fullscreen from anywhere in the window
-		this.registerDomEvent(doc as Document, 'keydown', (e: KeyboardEvent) => {
+		this.registerDomEvent(doc, 'keydown', (e: KeyboardEvent) => {
 			if (e.key === 'f' || e.key === 'F') toggleFullscreen();
 		});
 	}
