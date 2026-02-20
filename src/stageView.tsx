@@ -15,6 +15,7 @@ const STAGE_STYLES = `
     /* Show cursor while windowed so the user can interact with the hint bar.
        Hide it only when truly fullscreen (audience view). */
     cursor: default;
+    outline: none;  /* suppress focus ring when viewport is programmatically focused */
   }
 
   /* Hide cursor and fullscreen bar when the viewport is in OS fullscreen */
@@ -201,14 +202,27 @@ export class LectureLightStageView extends ItemView {
 			else enterFullscreen();
 		};
 
+		// Give the viewport keyboard focus so the F key works without the user
+		// having to click first.  tabIndex = -1 means focusable by script only
+		// (not reachable via Tab), and outline: none (in CSS above) suppresses
+		// the browser focus ring.
+		viewport.tabIndex = -1;
+		viewport.focus();
+
+		// Re-focus the viewport after Esc exits fullscreen so F still works.
+		this.registerDomEvent(doc, 'fullscreenchange', () => {
+			if (!doc.fullscreenElement) viewport.focus();
+		});
+
 		// Button is the primary affordance (especially after moving to a new display)
 		this.registerDomEvent(fsBtn, 'click', (e: MouseEvent) => {
 			e.stopPropagation();
 			enterFullscreen();
 		});
 
-		// F key toggles fullscreen from anywhere in the window
-		this.registerDomEvent(doc, 'keydown', (e: KeyboardEvent) => {
+		// F key — listen on win rather than doc; in Obsidian's Electron popout
+		// the window-level listener fires even when doc focus is ambiguous.
+		this.registerDomEvent(win, 'keydown', (e: KeyboardEvent) => {
 			if (e.key === 'f' || e.key === 'F') toggleFullscreen();
 		});
 	}
