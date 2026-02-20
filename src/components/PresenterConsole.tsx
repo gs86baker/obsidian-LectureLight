@@ -94,7 +94,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 		// Focus existing stage leaf if already open
 		const existing = app.workspace.getLeavesOfType(VIEW_TYPE_STAGE);
 		if (existing.length > 0 && existing[0]) {
-			app.workspace.revealLeaf(existing[0]);
+			await app.workspace.revealLeaf(existing[0]);
 			return;
 		}
 

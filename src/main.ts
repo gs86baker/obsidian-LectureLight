@@ -16,7 +16,8 @@ export default class LectureLightPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		// Inject presenter styles via JS so they're always in sync with main.js
+		// Inject presenter styles via JS so they're always in sync with main.js.
+		// eslint-disable-next-line obsidianmd/no-forbidden-elements
 		const styleEl = document.createElement('style');
 		styleEl.id = 'll-presenter-styles';
 		styleEl.textContent = PRESENTER_CSS;
@@ -42,7 +43,6 @@ export default class LectureLightPlugin extends Plugin {
 
 		this.addSettingTab(new LectureLightSettingTab(this.app, this));
 
-		// eslint-disable-next-line obsidianmd/ui/sentence-case
 		this.addCommand({
 			id: 'open-presenter',
 			name: 'Open presenter console',
@@ -83,7 +83,7 @@ export default class LectureLightPlugin extends Plugin {
 			leaf = workspace.getLeaf('tab');
 			await leaf.setViewState({ type: VIEW_TYPE_PRESENTER, active: true });
 		}
-		workspace.revealLeaf(leaf);
+		await workspace.revealLeaf(leaf);
 	}
 
 	async parseActiveNote(): Promise<void> {
