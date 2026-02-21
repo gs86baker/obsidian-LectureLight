@@ -1,6 +1,6 @@
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { Slide, ParseResult } from '../types';
+import { Slide, ParseResult, TimerSettings } from '../types';
 
 // Harden DOMPurify: add rel="noopener noreferrer" to all links
 DOMPurify.addHook('afterSanitizeAttributes', (node) => {
@@ -65,6 +65,38 @@ export function formatDuration(minutes: number): string {
 	return `~${hours}h ${mins}min`;
 }
 
+export const MAX_TARGET_MINUTES = 120;
+
+export interface TimerValidationResult {
+	isValid: boolean;
+	message: string | null;
+}
+
+export function validateTimerSettings(settings: TimerSettings): TimerValidationResult {
+	const { targetMinutes, warningMinutes, wrapUpMinutes } = settings;
+
+	if (!Number.isFinite(targetMinutes) || targetMinutes <= 0) {
+		return { isValid: false, message: 'Invalid target time. Target must be at least 1 minute.' };
+	}
+	if (targetMinutes > MAX_TARGET_MINUTES) {
+		return { isValid: false, message: `Invalid target time. Maximum is ${MAX_TARGET_MINUTES} minutes.` };
+	}
+	if (!Number.isFinite(warningMinutes) || warningMinutes < 0) {
+		return { isValid: false, message: 'Invalid warning time. Warning must be 0 minutes or more.' };
+	}
+	if (warningMinutes > targetMinutes) {
+		return { isValid: false, message: `Invalid warning time. Warning cannot exceed target (${targetMinutes}m).` };
+	}
+	if (!Number.isFinite(wrapUpMinutes) || wrapUpMinutes < 0) {
+		return { isValid: false, message: 'Invalid wrap-up time. Wrap-up must be 0 minutes or more.' };
+	}
+	if (wrapUpMinutes > warningMinutes) {
+		return { isValid: false, message: `Invalid wrap-up time. Wrap-up cannot exceed warning (${warningMinutes}m).` };
+	}
+
+	return { isValid: true, message: null };
+}
+
 /**
  * Parses a markdown string containing :::slide and :::lecturelight blocks.
  *
@@ -111,10 +143,14 @@ export function parseMarkdownToSlides(markdown: string): ParseResult {
 		const warning = getVal(/warning(?:Minutes)?:\s*(\d+(\.\d+)?)/i);
 		const wrapUp = getVal(/wrapUp(?:Minutes)?:\s*(\d+(\.\d+)?)/i);
 
+		const targetMinutes = target ?? 30;
+		const warningMinutes = warning ?? Math.min(5, targetMinutes);
+		const wrapUpMinutes = wrapUp ?? Math.min(2, warningMinutes);
+
 		timerSettings = {
-			targetMinutes: target ?? 30,
-			warningMinutes: warning ?? 5,
-			wrapUpMinutes: wrapUp ?? 2,
+			targetMinutes,
+			warningMinutes,
+			wrapUpMinutes,
 		};
 	}
 

@@ -31,6 +31,13 @@ export const PRESENTER_CSS = `
 	height: 100%;
 	overflow: hidden;
 	color-scheme: dark;
+	--ll-btn-height: 36px;
+	--ll-btn-radius: 8px;
+	--ll-btn-border: #355678;
+	--ll-btn-bg: #1e334d;
+	--ll-btn-bg-hover: #27405e;
+	--ll-btn-bg-active: #1a2f47;
+	--ll-btn-text: #e2e8f0;
 }
 
 /* ── Layout ── */
@@ -52,11 +59,20 @@ export const PRESENTER_CSS = `
 	min-height: 0 !important;
 }
 
+.ll-presenter-root .ll-main-column {
+	flex: 1 !important;
+	min-width: 0 !important;
+	display: flex !important;
+	flex-direction: column !important;
+	overflow: hidden !important;
+	border-right: 2px solid #2d4a6b !important;
+}
+
 /* ── Header ── */
 
 .ll-presenter-root .ll-header {
 	display: flex !important;
-	align-items: flex-start !important;
+	align-items: center !important;
 	justify-content: space-between !important;
 	padding: 10px 16px !important;
 	background: #0d1b2e !important;
@@ -73,7 +89,7 @@ export const PRESENTER_CSS = `
 }
 
 .ll-presenter-root .ll-header-right {
-	flex-wrap: wrap !important;
+	flex-wrap: nowrap !important;
 	justify-content: flex-end !important;
 }
 
@@ -92,106 +108,169 @@ export const PRESENTER_CSS = `
 	display: inline-flex !important;
 	align-items: center !important;
 	justify-content: center !important;
-	padding: 7px 12px !important;
-	border-radius: 6px !important;
-	border: 1px solid #2d4a6b !important;
-	background: #1a2e45 !important;
-	color: #f1f5f9 !important;
+	padding: 0 12px !important;
+	border-radius: var(--ll-btn-radius) !important;
+	border: 1px solid var(--ll-btn-border) !important;
+	background: var(--ll-btn-bg) !important;
+	color: var(--ll-btn-text) !important;
 	font-size: 12px !important;
-	font-weight: 600 !important;
+	font-weight: 700 !important;
 	cursor: pointer !important;
-	transition: background 0.15s !important;
+	transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease !important;
 	line-height: 1.4 !important;
 	white-space: nowrap !important;
-	box-shadow: none !important;
-	min-height: 34px !important;
+	text-align: center !important;
+	min-height: var(--ll-btn-height) !important;
 }
 
 .ll-presenter-root .ll-btn:hover:not(:disabled) {
-	background: #475569 !important;
+	background: var(--ll-btn-bg-hover) !important;
+	border-color: #5e81a7 !important;
+	color: #f1f5f9 !important;
+}
+
+.ll-presenter-root .ll-btn:active:not(:disabled) {
+	background: var(--ll-btn-bg-active) !important;
+	border-color: #4f7398 !important;
+}
+
+.ll-presenter-root .ll-btn:focus-visible {
+	outline: none !important;
+	box-shadow: 0 0 0 2px rgba(191, 219, 254, 0.6) !important;
 }
 
 .ll-presenter-root .ll-btn:disabled {
-	opacity: 0.35 !important;
+	opacity: 0.45 !important;
 	cursor: not-allowed !important;
 }
 
 .ll-presenter-root .ll-btn-sm {
-	padding: 7px 11px !important;
+	padding: 0 11px !important;
 	font-size: 12px !important;
+	min-height: 34px !important;
 }
 
 .ll-presenter-root .ll-btn-nav {
 	font-size: 12px !important;
 	font-weight: 700 !important;
-	padding: 7px 12px !important;
-	min-width: 96px !important;
+	padding: 0 12px !important;
+	min-width: 100px !important;
 }
 
 .ll-presenter-root .ll-btn-start {
 	background: #166534 !important;
-	border-color: #16a34a !important;
-	color: #bbf7d0 !important;
+	border-color: #34d399 !important;
+	color: #dcfce7 !important;
 	font-weight: 700 !important;
 }
 
 .ll-presenter-root .ll-btn-start:hover:not(:disabled) {
 	background: #15803d !important;
+	border-color: #6ee7b7 !important;
 }
 
 .ll-presenter-root .ll-btn-stop {
 	background: #991b1b !important;
-	border-color: #ef4444 !important;
-	color: #fecaca !important;
+	border-color: #f87171 !important;
+	color: #fee2e2 !important;
 	font-weight: 700 !important;
 	animation: ll-pulse 1.2s ease-in-out infinite !important;
 }
 
 .ll-presenter-root .ll-btn-stop:hover:not(:disabled) {
 	background: #b91c1c !important;
+	border-color: #fca5a5 !important;
 }
 
 .ll-presenter-root .ll-btn-active {
 	background: #1d4ed8 !important;
-	border-color: #3b82f6 !important;
-	color: #bfdbfe !important;
+	border-color: #60a5fa !important;
+	color: #dbeafe !important;
 }
 
 .ll-presenter-root .ll-btn-stage-active {
 	background: #78350f !important;
-	border-color: #f59e0b !important;
+	border-color: #fbbf24 !important;
 	color: #fef3c7 !important;
 	animation: ll-pulse 2s ease-in-out infinite !important;
 }
 
 .ll-presenter-root .ll-btn-content {
-	display: inline-flex !important;
+	display: grid !important;
+	width: 100% !important;
 	align-items: center !important;
+	grid-template-columns: 16px auto 16px !important;
 	justify-content: center !important;
-	gap: 7px !important;
+	gap: 8px !important;
+	line-height: 1 !important;
+}
+
+.ll-presenter-root .ll-btn-content::after {
+	content: "" !important;
+	width: 16px !important;
+	height: 16px !important;
+	grid-column: 3 !important;
 }
 
 .ll-presenter-root .ll-btn-icon {
 	display: inline-flex !important;
 	align-items: center !important;
 	justify-content: center !important;
+	width: 16px !important;
+	height: 16px !important;
+	flex: 0 0 16px !important;
+	grid-column: 1 !important;
 }
 
 .ll-presenter-root .ll-btn-icon-svg {
-	width: 14px !important;
-	height: 14px !important;
+	width: 15px !important;
+	height: 15px !important;
 	stroke: currentColor !important;
 	fill: none !important;
+	display: block !important;
 }
 
 .ll-presenter-root .ll-btn-text {
+	display: inline-block !important;
 	font-size: 12px !important;
 	font-weight: 700 !important;
 	letter-spacing: 0.01em !important;
+	line-height: 1 !important;
+	text-align: center !important;
+	grid-column: 2 !important;
+	justify-self: center !important;
 }
 
 .ll-presenter-root .ll-btn-record {
 	width: 100% !important;
+}
+
+.ll-presenter-root .ll-btn-icon-only {
+	width: 36px !important;
+	height: 36px !important;
+	min-width: 36px !important;
+	min-height: 36px !important;
+	padding: 0 !important;
+}
+
+.ll-presenter-root .ll-btn-icon-only .ll-btn-icon-svg {
+	width: 16px !important;
+	height: 16px !important;
+}
+
+.ll-presenter-root .ll-session-controls {
+	display: flex !important;
+	align-items: center !important;
+	gap: 10px !important;
+}
+
+.ll-presenter-root .ll-session-start {
+	flex: 1 1 auto !important;
+}
+
+.ll-presenter-root .ll-session-reset {
+	flex: 0 0 auto !important;
+	min-width: 100px !important;
 }
 
 @keyframes ll-pulse {
@@ -204,7 +283,6 @@ export const PRESENTER_CSS = `
 .ll-presenter-root .ll-teleprompter-panel {
 	flex: 1 !important;
 	overflow-y: auto !important;
-	border-right: 2px solid #2d4a6b !important;
 	min-width: 0 !important;
 	scrollbar-width: thin !important;
 	scrollbar-color: #2d4a6b transparent !important;
@@ -312,7 +390,7 @@ export const PRESENTER_CSS = `
 /* ── Sidebar ── */
 
 .ll-presenter-root .ll-sidebar {
-	width: 264px !important;
+	width: 322px !important;
 	flex-shrink: 0 !important;
 	display: flex !important;
 	flex-direction: column !important;
@@ -422,6 +500,43 @@ export const PRESENTER_CSS = `
 	text-overflow: ellipsis !important;
 }
 
+.ll-presenter-root .ll-preview-controls {
+	display: flex !important;
+	align-items: center !important;
+	gap: 10px !important;
+	margin-top: 10px !important;
+}
+
+.ll-presenter-root .ll-btn-preview-stage {
+	flex: 1 1 auto !important;
+}
+
+.ll-presenter-root .ll-btn-preview-theme {
+	flex: 0 0 auto !important;
+}
+
+.ll-presenter-root .ll-btn-preview-theme.ll-btn-preview-theme--dark {
+	background: #17293d !important;
+	border-color: #4a688a !important;
+	color: #cbd5e1 !important;
+}
+
+.ll-presenter-root .ll-btn-preview-theme.ll-btn-preview-theme--light {
+	background: #fffbeb !important;
+	border-color: #f59e0b !important;
+	color: #92400e !important;
+}
+
+.ll-presenter-root .ll-btn-preview-theme.ll-btn-preview-theme--dark:hover:not(:disabled) {
+	background: #1f344b !important;
+	border-color: #647f9f !important;
+}
+
+.ll-presenter-root .ll-btn-preview-theme.ll-btn-preview-theme--light:hover:not(:disabled) {
+	background: #fde68a !important;
+	border-color: #fbbf24 !important;
+}
+
 /* ── Traffic-light timer ── */
 
 .ll-presenter-root .ll-timer {
@@ -430,7 +545,7 @@ export const PRESENTER_CSS = `
 	flex-direction: column !important;
 	align-items: stretch !important;
 	justify-content: flex-start !important;
-	padding: 14px 14px 12px !important;
+	padding: 26px 14px 20px !important;
 	gap: 10px !important;
 	transition: background 0.4s !important;
 	min-height: 0 !important;
@@ -491,30 +606,48 @@ export const PRESENTER_CSS = `
 	flex-direction: column !important;
 	align-items: center !important;
 	justify-content: center !important;
-	padding: 6px 0 2px !important;
+	padding: 12px 0 2px !important;
 }
 
 .ll-presenter-root .ll-timer-display {
-	font-size: 42px !important;
+	font-size: 65px !important;
 	font-weight: 900 !important;
-	font-family: var(--font-monospace, monospace) !important;
+	font-family: var(--font-interface, system-ui, sans-serif) !important;
 	font-variant-numeric: tabular-nums !important;
+	letter-spacing: -0.01em !important;
 	line-height: 1 !important;
 	color: #fff !important;
 }
 
 .ll-presenter-root .ll-timer-target {
-	font-size: 10px !important;
+	font-size: 9px !important;
 	font-weight: 600 !important;
 	color: rgba(255, 255, 255, 0.4) !important;
 	margin-top: 2px !important;
-	text-transform: uppercase !important;
-	letter-spacing: 0.1em !important;
+	text-transform: none !important;
+	letter-spacing: 0.03em !important;
+	line-height: 1.4 !important;
 	text-align: center !important;
 }
 
-.ll-presenter-root .ll-timer-extra {
+.ll-presenter-root .ll-timer-error {
 	margin-top: 6px !important;
+	padding: 7px 8px !important;
+	font-size: 11px !important;
+	line-height: 1.45 !important;
+	font-weight: 700 !important;
+	color: #fee2e2 !important;
+	background: rgba(153, 27, 27, 0.35) !important;
+	border: 1px solid rgba(254, 202, 202, 0.45) !important;
+	border-radius: 6px !important;
+}
+
+.ll-presenter-root .ll-timer-extra {
+	margin-top: auto !important;
+	padding-top: 10px !important;
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 10px !important;
 }
 
 /* ── Film strip ── */
@@ -722,7 +855,7 @@ export const PRESENTER_CSS = `
 .ll-presenter-root .ll-btn-theme-active {
 	background: #1e3a5f !important;
 	border-color: #60a5fa !important;
-	color: #bfdbfe !important;
+	color: #dbeafe !important;
 }
 
 /* ── Mic / recording button ── */
@@ -730,7 +863,7 @@ export const PRESENTER_CSS = `
 .ll-presenter-root .ll-btn-mic-active {
 	background: #4c1d95 !important;
 	border-color: #a78bfa !important;
-	color: #ede9fe !important;
+	color: #f3e8ff !important;
 }
 
 /* ── Recording panel (inside timer) ── */
@@ -739,15 +872,18 @@ export const PRESENTER_CSS = `
 	background: rgba(255,255,255,0.12) !important;
 	border: 1px solid rgba(255,255,255,0.25) !important;
 	border-radius: 10px !important;
-	padding: 10px !important;
+	padding: 12px !important;
 	backdrop-filter: blur(2px) !important;
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 10px !important;
 }
 
 .ll-presenter-root .ll-recording-card-head {
 	display: flex !important;
 	align-items: center !important;
 	justify-content: space-between !important;
-	gap: 8px !important;
+	gap: 10px !important;
 }
 
 .ll-presenter-root .ll-recording-card-title {
@@ -764,12 +900,64 @@ export const PRESENTER_CSS = `
 	align-items: center !important;
 	gap: 6px !important;
 	font-size: 11px !important;
+	font-weight: 600 !important;
+	line-height: 1.2 !important;
 	color: rgba(255,255,255,0.85) !important;
+	user-select: none !important;
+	cursor: pointer !important;
+	flex-shrink: 0 !important;
 }
 
 .ll-presenter-root .ll-recording-enable input {
-	width: 14px !important;
-	height: 14px !important;
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	margin: 0 !important;
+	width: 16px !important;
+	height: 16px !important;
+	border-radius: 4px !important;
+	border: 1px solid rgba(255,255,255,0.5) !important;
+	background: rgba(15, 35, 56, 0.9) !important;
+	display: inline-grid !important;
+	place-content: center !important;
+	cursor: pointer !important;
+	outline: none !important;
+	box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05) !important;
+	transition: background-color 0.12s, border-color 0.12s, box-shadow 0.12s !important;
+}
+
+.ll-presenter-root .ll-recording-enable input::before {
+	content: "" !important;
+	width: 10px !important;
+	height: 10px !important;
+	background-repeat: no-repeat !important;
+	background-position: center !important;
+	background-size: contain !important;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3 3 7-7' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+	opacity: 0 !important;
+	transform: scale(0.9) !important;
+	transition: opacity 0.12s ease-out, transform 0.12s ease-out !important;
+}
+
+.ll-presenter-root .ll-recording-enable input:checked {
+	background: #2563eb !important;
+	border-color: #bfdbfe !important;
+	box-shadow: inset 0 0 0 1px rgba(219, 234, 254, 0.2) !important;
+}
+
+.ll-presenter-root .ll-recording-enable input:checked::before {
+	opacity: 1 !important;
+	transform: scale(1) !important;
+}
+
+.ll-presenter-root .ll-recording-enable input:focus-visible {
+	box-shadow:
+		0 0 0 2px rgba(191, 219, 254, 0.55),
+		inset 0 0 0 1px rgba(255,255,255,0.08) !important;
+}
+
+.ll-presenter-root .ll-recording-enable input:disabled {
+	opacity: 0.55 !important;
+	cursor: not-allowed !important;
 }
 
 .ll-presenter-root .ll-recording-ready {
@@ -779,7 +967,7 @@ export const PRESENTER_CSS = `
 	font-size: 11px !important;
 	font-weight: 700 !important;
 	color: #bbf7d0 !important;
-	margin-top: 8px !important;
+	margin-top: 0 !important;
 }
 
 .ll-presenter-root .ll-recording-ready-dot {
@@ -789,20 +977,26 @@ export const PRESENTER_CSS = `
 	background: #22c55e !important;
 }
 
-.ll-presenter-root .ll-recording-controls {
-	display: grid !important;
-	grid-template-columns: 1fr !important;
-	gap: 8px !important;
-	margin-top: 8px !important;
-}
-
-/* Level meter */
-
 .ll-presenter-root .ll-level-meter-wrap {
-	margin-top: 8px !important;
+	margin-top: 0 !important;
 	display: flex !important;
 	align-items: center !important;
 	gap: 8px !important;
+}
+
+.ll-presenter-root .ll-level-meter-icon {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	width: 14px !important;
+	height: 14px !important;
+	color: rgba(255,255,255,0.72) !important;
+	flex-shrink: 0 !important;
+}
+
+.ll-presenter-root .ll-level-meter-icon .ll-btn-icon-svg {
+	width: 13px !important;
+	height: 13px !important;
 }
 
 .ll-presenter-root .ll-level-meter-grid {
@@ -838,16 +1032,6 @@ export const PRESENTER_CSS = `
 	box-shadow: 0 0 5px rgba(220, 52, 68, 0.55) !important;
 }
 
-.ll-presenter-root .ll-level-meter-value {
-	width: 34px !important;
-	font-size: 10px !important;
-	font-weight: 700 !important;
-	letter-spacing: 0.02em !important;
-	color: #cbd5e1 !important;
-	text-align: right !important;
-	font-variant-numeric: tabular-nums !important;
-}
-
 /* Recording status row */
 
 .ll-presenter-root .ll-recording-status {
@@ -859,7 +1043,7 @@ export const PRESENTER_CSS = `
 	text-transform: uppercase !important;
 	letter-spacing: 0.12em !important;
 	color: #f1f5f9 !important;
-	margin-top: 8px !important;
+	margin-top: 0 !important;
 }
 
 .ll-presenter-root .ll-recording-status--dim {
@@ -881,7 +1065,7 @@ export const PRESENTER_CSS = `
 /* Mic permission error */
 
 .ll-presenter-root .ll-recording-error {
-	margin-top: 8px !important;
+	margin-top: 0 !important;
 	padding: 6px 8px !important;
 	font-size: 11px !important;
 	line-height: 1.5 !important;
