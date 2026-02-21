@@ -171,7 +171,6 @@ export class LectureLightStageView extends ItemView {
 		// Use the ownerDocument/window of the container so this works correctly
 		// in both the main window and popout windows.
 		const doc = this.contentEl.ownerDocument;
-		const win = doc.defaultView!;
 
 		this.contentEl.empty();
 
@@ -204,13 +203,25 @@ export class LectureLightStageView extends ItemView {
 			text: '⊡  Go fullscreen  ·  F',
 		});
 
-		// ── Scale canvas to fill window at any resolution ─────────────────────
+		// ── Scale canvas to fill viewport at any resolution ───────────────────
+		// Measure the actual viewport element so scale remains correct even if
+		// Obsidian moves this leaf between windows during popout lifecycle.
 		const rescale = (): void => {
-			const scale = Math.min(win.innerWidth / 1920, win.innerHeight / 1080);
+			const rect = viewport.getBoundingClientRect();
+			const width = rect.width || viewport.ownerDocument.defaultView?.innerWidth || 0;
+			const height = rect.height || viewport.ownerDocument.defaultView?.innerHeight || 0;
+			const scale = Math.min(width / 1920, height / 1080);
 			canvas.style.transform = `scale(${scale})`;
 		};
+
+		const ResizeObserverCtor = viewport.ownerDocument.defaultView?.ResizeObserver ?? ResizeObserver;
+		const resizeObserver = new ResizeObserverCtor(() => rescale());
+		resizeObserver.observe(viewport);
+		this.register(() => resizeObserver.disconnect());
+
 		rescale();
-		this.registerDomEvent(win, 'resize', rescale);
+		viewport.ownerDocument.defaultView?.requestAnimationFrame(() => rescale());
+		viewport.ownerDocument.defaultView?.setTimeout(() => rescale(), 0);
 
 		// ── BroadcastChannel ──────────────────────────────────────────────────
 		const ch = new BroadcastChannel('lecturelight-stage');
@@ -244,7 +255,8 @@ export class LectureLightStageView extends ItemView {
 			viewport.requestFullscreen().catch(() => { /* browser may deny on some platforms */ });
 		};
 		const toggleFullscreen = (): void => {
-			if (doc.fullscreenElement) doc.exitFullscreen().catch(() => { /* ignored */ });
+			const activeDoc = viewport.ownerDocument;
+			if (activeDoc.fullscreenElement) activeDoc.exitFullscreen().catch(() => { /* ignored */ });
 			else enterFullscreen();
 		};
 
@@ -256,8 +268,8 @@ export class LectureLightStageView extends ItemView {
 		viewport.focus();
 
 		// Re-focus the viewport after Esc exits fullscreen so F still works.
-		this.registerDomEvent(doc, 'fullscreenchange', () => {
-			if (!doc.fullscreenElement) viewport.focus();
+		this.registerDomEvent(viewport, 'fullscreenchange', () => {
+			if (!viewport.ownerDocument.fullscreenElement) viewport.focus();
 		});
 
 		// Button is the primary affordance (especially after moving to a new display)
@@ -266,9 +278,9 @@ export class LectureLightStageView extends ItemView {
 			enterFullscreen();
 		});
 
-		// F key — listen on win rather than doc; in Obsidian's Electron popout
-		// the window-level listener fires even when doc focus is ambiguous.
-		this.registerDomEvent(win, 'keydown', (e: KeyboardEvent) => {
+		// Keep the key handler on the viewport element so it survives document
+		// transfer when Obsidian detaches this leaf into a popout window.
+		this.registerDomEvent(viewport, 'keydown', (e: KeyboardEvent) => {
 			if (e.key === 'f' || e.key === 'F') toggleFullscreen();
 		});
 	}
