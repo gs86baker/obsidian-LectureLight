@@ -46,14 +46,27 @@ async function fixWebmDuration(blob: Blob, durationMs: number): Promise<Blob> {
 		const buf  = await blob.arrayBuffer();
 		const u8   = new Uint8Array(buf);
 		const view = new DataView(buf);
-		for (let i = 0; i < u8.length - 11; i++) {
+		// Duration lives in the Segment > Info section near the start of the file.
+		// Scan the first 4 KB to avoid false-matching audio data.
+		const limit = Math.min(u8.length - 12, 4096);
+		for (let i = 0; i < limit; i++) {
 			if (u8[i] === 0x44 && u8[i + 1] === 0x89) {
+				// 1-byte VINT sizes
 				if (u8[i + 2] === 0x88) {             // size = 8 → float64
 					view.setFloat64(i + 3, durationMs, false);
 					return new Blob([buf], { type: blob.type });
 				}
 				if (u8[i + 2] === 0x84) {             // size = 4 → float32
 					view.setFloat32(i + 3, durationMs, false);
+					return new Blob([buf], { type: blob.type });
+				}
+				// 2-byte VINT sizes (some muxers use wider encoding)
+				if (u8[i + 2] === 0x40 && u8[i + 3] === 0x08) {  // size = 8 → float64
+					view.setFloat64(i + 4, durationMs, false);
+					return new Blob([buf], { type: blob.type });
+				}
+				if (u8[i + 2] === 0x40 && u8[i + 3] === 0x04) {  // size = 4 → float32
+					view.setFloat32(i + 4, durationMs, false);
 					return new Blob([buf], { type: blob.type });
 				}
 			}

@@ -182,25 +182,48 @@ export class LectureLightStageView extends ItemView {
 		doc.head.appendChild(styleEl);
 		this.register(() => styleEl.remove());
 
+		// Create a DOMPurify instance bound to the popout window's document.
+		// The module-level DOMPurify holds the main window's document, and using
+		// it in a popout triggers cross-document "illegal access" errors.
+		const purify = DOMPurify(win);
+
 		// ── DOM ──────────────────────────────────────────────────────────────
-		const viewport = this.contentEl.createDiv({ cls: 'ls-viewport' });
-		const canvas   = viewport.createDiv({ cls: 'ls-canvas' });
+		// Attach the viewport directly to the body so it escapes any CSS
+		// transform on Obsidian workspace ancestors (transforms create a new
+		// containing block that breaks position:fixed → letterboxing).
+		const viewport = doc.createElement('div');
+		viewport.className = 'ls-viewport';
+		doc.body.appendChild(viewport);
+		this.register(() => viewport.remove());
 
-		const waiting  = canvas.createDiv({ cls: 'ls-waiting' });
-		waiting.createDiv({ cls: 'ls-waiting-icon', text: '🎞' });
-		waiting.createSpan({ text: 'Waiting for presenter\u2026' });
+		const canvas = doc.createElement('div');
+		canvas.className = 'ls-canvas';
+		viewport.appendChild(canvas);
 
-		const content = canvas.createDiv({ cls: 'ls-content' });
+		const waiting = doc.createElement('div');
+		waiting.className = 'ls-waiting';
+		canvas.appendChild(waiting);
+		const waitingIcon = doc.createElement('div');
+		waitingIcon.className = 'ls-waiting-icon';
+		waitingIcon.textContent = '\uD83C\uDFA5';
+		waiting.appendChild(waitingIcon);
+		const waitingText = doc.createElement('span');
+		waitingText.textContent = 'Waiting for presenter\u2026';
+		waiting.appendChild(waitingText);
+
+		const content = doc.createElement('div');
+		content.className = 'ls-content';
+		canvas.appendChild(content);
 
 		// Fullscreen hint bar — hidden by CSS when :fullscreen, visible otherwise.
-		// No JS show/hide needed; toggling is handled entirely by the CSS rule
-		// `.ls-viewport:fullscreen .ls-fs-bar { display: none }` above.
-		const fsBar = viewport.createDiv({ cls: 'ls-fs-bar' });
-		const fsBtn = fsBar.createEl('button', {
-			cls:  'ls-fs-btn',
-			// eslint-disable-next-line obsidianmd/ui/sentence-case
-			text: '⊡  Go fullscreen  ·  F',
-		});
+		const fsBar = doc.createElement('div');
+		fsBar.className = 'ls-fs-bar';
+		viewport.appendChild(fsBar);
+		const fsBtn = doc.createElement('button');
+		fsBtn.className = 'ls-fs-btn';
+		// eslint-disable-next-line obsidianmd/ui/sentence-case
+		fsBtn.textContent = '\u2299  Go fullscreen  \u00B7  F';
+		fsBar.appendChild(fsBtn);
 
 		// ── Scale canvas to fill window at any resolution ─────────────────────
 		const rescale = (): void => {
@@ -217,13 +240,13 @@ export class LectureLightStageView extends ItemView {
 		ch.addEventListener('message', (e: MessageEvent) => {
 			const msg = e.data as { type: string; htmlContent?: string; light?: boolean; layout?: string };
 			if (msg.type === 'slide-change') {
-				waiting.addClass('ls-hidden');
-				content.addClass('ls-visible');
+				waiting.classList.add('ls-hidden');
+				content.classList.add('ls-visible');
 				// eslint-disable-next-line @microsoft/sdl/no-inner-html
-				content.innerHTML = DOMPurify.sanitize(msg.htmlContent ?? '');
-				content.toggleClass('ls-layout-bleed', msg.layout === 'bleed');
+				content.innerHTML = purify.sanitize(msg.htmlContent ?? '');
+				content.classList.toggle('ls-layout-bleed', msg.layout === 'bleed');
 			} else if (msg.type === 'theme-change') {
-				canvas.toggleClass('ls-light', msg.light ?? false);
+				canvas.classList.toggle('ls-light', msg.light ?? false);
 			}
 		});
 
