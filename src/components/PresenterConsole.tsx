@@ -1,28 +1,43 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { App } from 'obsidian';
+import { App, Notice } from 'obsidian';
 import { ParseResult } from '../types';
 import { LectureLightSettings } from '../settings';
 import { TrafficLightTimer } from './TrafficLightTimer';
 import { FilmStrip } from './FilmStrip';
 import { Teleprompter } from './Teleprompter';
 import { VIEW_TYPE_STAGE } from '../stageView';
+import { useAudioRecorder } from '../hooks/useAudioRecorder';
+import { logger } from '../lib/logger';
+import { saveRecording, appendSessionLinks } from '../lib/vaultSave';
 
 interface PresenterConsoleProps {
 	parseResult: ParseResult | null;
-	settings: LectureLightSettings;
-	app: App;
+	settings:    LectureLightSettings;
+	app:         App;
 }
 
 export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult, settings, app }) => {
-	const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-	const [elapsedSeconds, setElapsedSeconds] = useState(0);
-	const [isSessionActive, setIsSessionActive] = useState(false);
-	const [isFilmStripVisible, setIsFilmStripVisible] = useState(true);
+	const [currentSlideIndex,    setCurrentSlideIndex]    = useState(0);
+	const [elapsedSeconds,       setElapsedSeconds]       = useState(0);
+	const [isSessionActive,      setIsSessionActive]      = useState(false);
+	const [isFilmStripVisible,   setIsFilmStripVisible]   = useState(true);
 	const [teleprompterFontSize, setTeleprompterFontSize] = useState(20);
-	const [isStageOpen, setIsStageOpen] = useState(false);
-	const [stageLightTheme, setStageLightTheme] = useState(false);
+	const [isStageOpen,          setIsStageOpen]          = useState(false);
+	const [stageLightTheme,      setStageLightTheme]      = useState(false);
+	const [isSaving,             setIsSaving]             = useState(false);
 
 	const channelRef = useRef<BroadcastChannel | null>(null);
+
+	const {
+		status:         recorderStatus,
+		error:          recorderError,
+		level,
+		mimeType,
+		testMic,
+		startRecording,
+		stopRecording,
+		release:        releaseRecorder,
+	} = useAudioRecorder();
 
 	const slides = parseResult?.slides ?? [];
 
@@ -68,12 +83,13 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 		return () => clearInterval(id);
 	}, [isStageOpen, app]);
 
-	// Stage leaf cleanup on component unmount
+	// Stage leaf cleanup on component unmount; also release mic
 	useEffect(() => {
 		return () => {
 			app.workspace.getLeavesOfType(VIEW_TYPE_STAGE).forEach(leaf => leaf.detach());
+			releaseRecorder();
 		};
-	}, [app]);
+	}, [app, releaseRecorder]);
 
 	const currentSlide = slides[currentSlideIndex];
 
@@ -101,6 +117,15 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 		});
 	}, [stageLightTheme, app]);
 
+	// Session slide-change logging — tracks every navigation during an active session
+	const prevSlideIndexRef = useRef(currentSlideIndex);
+	useEffect(() => {
+		if (isSessionActive && currentSlideIndex !== prevSlideIndexRef.current) {
+			logger.trackSlideChange(currentSlideIndex, slides[currentSlideIndex]?.label);
+		}
+		prevSlideIndexRef.current = currentSlideIndex;
+	}, [currentSlideIndex, isSessionActive, slides]);
+
 	const goToSlide = useCallback((index: number) => {
 		if (index < 0 || index >= slides.length) return;
 		setCurrentSlideIndex(index);
@@ -111,41 +136,89 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 	}, [slides.length, isSessionActive]);
 
 	// Keyboard navigation — arrow keys and Page Up/Down
+	const goToSlideRef = useRef(goToSlide);
+	useEffect(() => { goToSlideRef.current = goToSlide; }, [goToSlide]);
+	const slideCountRef = useRef(slides.length);
+	useEffect(() => { slideCountRef.current = slides.length; }, [slides.length]);
+	const slideIndexRef = useRef(currentSlideIndex);
+	useEffect(() => { slideIndexRef.current = currentSlideIndex; }, [currentSlideIndex]);
+
 	useEffect(() => {
 		const handler = (e: KeyboardEvent): void => {
-			// Ignore when focus is inside an input or contenteditable
 			const target = e.target as HTMLElement;
 			if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
 			if (e.key === 'ArrowRight' || e.key === 'PageDown') {
 				e.preventDefault();
-				setCurrentSlideIndex(i => Math.min(i + 1, slides.length - 1));
+				goToSlideRef.current(Math.min(slideIndexRef.current + 1, slideCountRef.current - 1));
 			} else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
 				e.preventDefault();
-				setCurrentSlideIndex(i => {
-					const next = Math.max(i - 1, 0);
-					if (next === 0 && isSessionActive) setElapsedSeconds(0);
-					return next;
-				});
+				goToSlideRef.current(Math.max(slideIndexRef.current - 1, 0));
 			}
 		};
 		document.addEventListener('keydown', handler);
 		return () => document.removeEventListener('keydown', handler);
-	}, [slides.length, isSessionActive]);
+	}, []); // stable — uses refs for all dynamic values
+
+	// ── Session start / stop ───────────────────────────────────────────────────
+
+	const handleSessionToggle = useCallback(async () => {
+		if (isSessionActive) {
+			// Stop: halt timer immediately, then collect recording and save.
+			setIsSessionActive(false);
+			const sessionLog = logger.stopSession();
+			const blob       = await stopRecording();
+
+			if (blob && sessionLog) {
+				setIsSaving(true);
+				try {
+					const noteTitle = app.workspace.getActiveFile()?.basename ?? 'untitled';
+					const { audioPath, jsonPath } = await saveRecording(
+						app, blob, sessionLog, noteTitle, mimeType, settings.recordingFolder,
+					);
+					await appendSessionLinks(app, audioPath, jsonPath, sessionLog.startTime);
+					new Notice('Recording saved to vault.');
+				} catch (e) {
+					new Notice('Failed to save recording — check the developer console for details.');
+					console.error('[LectureLight] Save failed:', e);
+				} finally {
+					setIsSaving(false);
+				}
+			}
+		} else {
+			// Start: initialise logger, request mic, begin recording.
+			logger.startSession(crypto.randomUUID(), timerSettings);
+			if (currentSlide) {
+				logger.trackSlideChange(currentSlideIndex, currentSlide.label);
+			}
+			await startRecording();
+			// Start the session even if mic permission was denied (timer still runs).
+			setIsSessionActive(true);
+		}
+	}, [
+		isSessionActive,
+		currentSlideIndex,
+		currentSlide,
+		timerSettings,
+		mimeType,
+		app,
+		settings.recordingFolder,
+		startRecording,
+		stopRecording,
+	]);
+
+	// ── Stage window ───────────────────────────────────────────────────────────
 
 	const openStage = useCallback(async () => {
-		// Focus existing stage leaf if already open
 		const existing = app.workspace.getLeavesOfType(VIEW_TYPE_STAGE);
 		if (existing.length > 0 && existing[0]) {
 			await app.workspace.revealLeaf(existing[0]);
 			return;
 		}
 
-		// Open a native popout window via Obsidian's workspace API
 		const leaf = app.workspace.openPopoutLeaf({ size: { width: 1280, height: 720 } });
 		await leaf.setViewState({ type: VIEW_TYPE_STAGE, active: true });
 		setIsStageOpen(true);
 
-		// Send current slide and theme once the view has had time to set up its channel
 		setTimeout(() => {
 			if (!channelRef.current || !currentSlide) return;
 			channelRef.current.postMessage({
@@ -155,16 +228,13 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 				total:       slides.length,
 				label:       currentSlide.label,
 			});
-			channelRef.current.postMessage({
-				type:  'theme-change',
-				light: stageLightTheme,
-			});
+			channelRef.current.postMessage({ type: 'theme-change', light: stageLightTheme });
 		}, 800);
 	}, [app, currentSlide, currentSlideIndex, slides.length, stageLightTheme]);
 
-	const toggleTheme = useCallback(() => {
-		setStageLightTheme(t => !t);
-	}, []);
+	const toggleTheme = useCallback(() => setStageLightTheme(t => !t), []);
+
+	// ── Empty state ────────────────────────────────────────────────────────────
 
 	if (!parseResult || slides.length === 0) {
 		return (
@@ -177,6 +247,20 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 			</div>
 		);
 	}
+
+	// ── Derived recording UI values ────────────────────────────────────────────
+
+	const isRecording  = recorderStatus === 'recording';
+	const isTesting    = recorderStatus === 'testing';
+	const meterVisible = isRecording || isTesting;
+	const levelPct     = `${Math.min(level * 100, 100).toFixed(1)}%`;
+	const meterClass   = level > 0.8
+		? 'll-level-meter-bar ll-level-meter-bar--peak'
+		: level > 0.6
+			? 'll-level-meter-bar ll-level-meter-bar--warning'
+			: 'll-level-meter-bar';
+
+	// ── Render ─────────────────────────────────────────────────────────────────
 
 	return (
 		<div className="ll-presenter">
@@ -229,10 +313,20 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 						{isStageOpen ? '⊡ Live' : '⊡ Stage'}
 					</button>
 					<button
-						className={`ll-btn ${isSessionActive ? 'll-btn-stop' : 'll-btn-start'}`}
-						onClick={() => setIsSessionActive(a => !a)}
+						className={`ll-btn ll-btn-sm${isTesting ? ' ll-btn-mic-active' : ''}`}
+						onClick={() => { void testMic(); }}
+						disabled={isSessionActive || isSaving}
+						aria-label="Test microphone"
 					>
-						{isSessionActive ? 'Stop' : 'Start'}
+						{isTesting ? 'Mic on' : 'Test mic'}
+					</button>
+					<button
+						className={`ll-btn ${isSessionActive ? 'll-btn-stop' : 'll-btn-start'}`}
+						onClick={() => { void handleSessionToggle(); }}
+						disabled={isSaving}
+						aria-label={isSessionActive ? 'Stop session and save recording' : 'Start session and recording'}
+					>
+						{isSaving ? 'Saving…' : isSessionActive ? 'Stop' : 'Start'}
 					</button>
 					<button
 						className={`ll-btn ll-btn-sm${isFilmStripVisible ? ' ll-btn-active' : ''}`}
@@ -274,6 +368,46 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 						isActive={isSessionActive}
 						settings={timerSettings}
 					/>
+
+					{/* ── Recording panel ── */}
+					<div className="ll-recording-section">
+						<div className="ll-section-label">Recording</div>
+
+						{meterVisible && (
+							<div className="ll-level-meter-wrap">
+								<div className={meterClass} style={{ width: levelPct }} />
+							</div>
+						)}
+
+						{isRecording && (
+							<div className="ll-recording-status">
+								<span className="ll-recording-dot" />
+								<span>Recording</span>
+							</div>
+						)}
+
+						{isTesting && (
+							<div className="ll-recording-status ll-recording-status--dim">
+								Mic active
+							</div>
+						)}
+
+						{recorderStatus === 'requesting' && (
+							<div className="ll-recording-status ll-recording-status--dim">
+								Requesting mic…
+							</div>
+						)}
+
+						{isSaving && (
+							<div className="ll-recording-status ll-recording-status--dim">
+								Saving…
+							</div>
+						)}
+
+						{recorderError && (
+							<div className="ll-recording-error">{recorderError}</div>
+						)}
+					</div>
 				</aside>
 			</div>
 

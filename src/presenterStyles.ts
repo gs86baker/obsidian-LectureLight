@@ -539,4 +539,89 @@ export const PRESENTER_CSS = `
 	border-color: #60a5fa !important;
 	color: #bfdbfe !important;
 }
+
+/* ── Mic / recording button ── */
+
+.ll-presenter-root .ll-btn-mic-active {
+	background: #4c1d95 !important;
+	border-color: #a78bfa !important;
+	color: #ede9fe !important;
+}
+
+/* ── Recording panel (sidebar section) ── */
+
+.ll-presenter-root .ll-recording-section {
+	padding: 12px 14px !important;
+	border-top: 1px solid #2d4a6b !important;
+	flex-shrink: 0 !important;
+}
+
+/* Level meter */
+
+.ll-presenter-root .ll-level-meter-wrap {
+	margin-top: 8px !important;
+	height: 6px !important;
+	background: #1a2e45 !important;
+	border-radius: 3px !important;
+	overflow: hidden !important;
+}
+
+.ll-presenter-root .ll-level-meter-bar {
+	height: 100% !important;
+	border-radius: 3px !important;
+	background: #059669 !important;
+	transition: width 0.05s linear !important;
+	min-width: 0 !important;
+}
+
+.ll-presenter-root .ll-level-meter-bar--warning {
+	background: #fc7e14 !important;
+}
+
+.ll-presenter-root .ll-level-meter-bar--peak {
+	background: #dc3444 !important;
+}
+
+/* Recording status row */
+
+.ll-presenter-root .ll-recording-status {
+	display: flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	font-size: 10px !important;
+	font-weight: 700 !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.12em !important;
+	color: #f1f5f9 !important;
+	margin-top: 8px !important;
+}
+
+.ll-presenter-root .ll-recording-status--dim {
+	color: #94a3b8 !important;
+	font-weight: 600 !important;
+}
+
+/* Pulsing red dot for active recording */
+
+.ll-presenter-root .ll-recording-dot {
+	width: 7px !important;
+	height: 7px !important;
+	border-radius: 50% !important;
+	background: #dc3444 !important;
+	flex-shrink: 0 !important;
+	animation: ll-pulse 1s ease-in-out infinite !important;
+}
+
+/* Mic permission error */
+
+.ll-presenter-root .ll-recording-error {
+	margin-top: 8px !important;
+	padding: 6px 8px !important;
+	font-size: 11px !important;
+	line-height: 1.5 !important;
+	color: #fca5a5 !important;
+	background: rgba(220, 52, 68, 0.12) !important;
+	border: 1px solid rgba(220, 52, 68, 0.35) !important;
+	border-radius: 4px !important;
+}
 `;
