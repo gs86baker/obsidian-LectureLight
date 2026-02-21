@@ -5,9 +5,10 @@ interface FilmStripProps {
 	slides: Slide[];
 	currentSlideIndex: number;
 	onSlideSelect: (index: number) => void;
+	lightTheme?: boolean;
 }
 
-export const FilmStrip: React.FC<FilmStripProps> = ({ slides, currentSlideIndex, onSlideSelect }) => {
+export const FilmStrip: React.FC<FilmStripProps> = ({ slides, currentSlideIndex, onSlideSelect, lightTheme = false }) => {
 	if (slides.length === 0) return null;
 
 	return (
@@ -24,9 +25,9 @@ export const FilmStrip: React.FC<FilmStripProps> = ({ slides, currentSlideIndex,
 					aria-current={index === currentSlideIndex ? 'true' : undefined}
 					title={slide.label ?? `Slide ${index + 1}`}
 				>
-					<div className="ll-filmstrip-thumb">
+					<div className={`ll-filmstrip-thumb${lightTheme ? ' ll-theme-light' : ''}`}>
 						<div
-							className={`ll-filmstrip-thumb-inner ll-layout-${slide.layout}`}
+							className={`ll-filmstrip-thumb-inner ll-layout-${slide.layout}${lightTheme ? ' ll-theme-light' : ''}`}
 							dangerouslySetInnerHTML={{ __html: slide.htmlContent }}
 						/>
 					</div>

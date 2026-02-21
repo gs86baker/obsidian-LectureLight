@@ -390,6 +390,27 @@ export const PRESENTER_CSS = `
 	margin: 0 !important; border-radius: 0 !important;
 }
 
+/* Light-theme preview styling (matches stage light mode) */
+.ll-presenter-root .ll-slide-canvas.ll-theme-light {
+	background: #f8fafc !important;
+	border-color: #cbd5e1 !important;
+}
+
+.ll-presenter-root .ll-slide-html.ll-theme-light {
+	color: #0f172a !important;
+}
+
+.ll-presenter-root .ll-slide-html.ll-theme-light h1 { color: #0f172a !important; }
+.ll-presenter-root .ll-slide-html.ll-theme-light h2 { color: #1e293b !important; }
+.ll-presenter-root .ll-slide-html.ll-theme-light h3 { color: #334155 !important; }
+.ll-presenter-root .ll-slide-html.ll-theme-light code {
+	background: rgba(0,0,0,0.07) !important;
+}
+.ll-presenter-root .ll-slide-html.ll-theme-light pre {
+	background: rgba(0,0,0,0.05) !important;
+	border-color: rgba(0,0,0,0.12) !important;
+}
+
 .ll-presenter-root .ll-slide-label {
 	font-size: 11px !important;
 	font-weight: 600 !important;
@@ -547,6 +568,11 @@ export const PRESENTER_CSS = `
 	position: relative !important;
 }
 
+.ll-presenter-root .ll-filmstrip-thumb.ll-theme-light {
+	background: #f8fafc !important;
+	border-color: #cbd5e1 !important;
+}
+
 .ll-presenter-root .ll-filmstrip-thumb-inner {
 	position: absolute !important;
 	top: 0 !important;
@@ -590,6 +616,17 @@ export const PRESENTER_CSS = `
 .ll-presenter-root .ll-filmstrip-thumb-inner.ll-layout-bleed img {
 	width: 100% !important; max-width: 100% !important; display: block !important;
 	margin: 0 !important; border-radius: 0 !important;
+}
+
+/* Light-theme filmstrip styling (matches stage light mode) */
+.ll-presenter-root .ll-filmstrip-thumb-inner.ll-theme-light {
+	color: #0f172a !important;
+}
+.ll-presenter-root .ll-filmstrip-thumb-inner.ll-theme-light h1 { color: #0f172a !important; }
+.ll-presenter-root .ll-filmstrip-thumb-inner.ll-theme-light h2 { color: #1e293b !important; }
+.ll-presenter-root .ll-filmstrip-thumb-inner.ll-theme-light h3 { color: #334155 !important; }
+.ll-presenter-root .ll-filmstrip-thumb-inner.ll-theme-light code {
+	background: rgba(0,0,0,0.07) !important;
 }
 
 .ll-presenter-root .ll-filmstrip-label {

@@ -299,7 +299,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 	// ── Render ─────────────────────────────────────────────────────────────────
 
 	return (
-		<div className="ll-presenter">
+		<div className={`ll-presenter${stageLightTheme ? ' ll-stage-light' : ''}`}>
 			{/* ── Header ── */}
 			<header className="ll-header">
 				<div className="ll-header-left">
@@ -404,9 +404,9 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 				<aside className="ll-sidebar">
 					<div className="ll-preview-section">
 						<div className="ll-section-label">Stage preview</div>
-						<div className="ll-slide-canvas">
+						<div className={`ll-slide-canvas${stageLightTheme ? ' ll-theme-light' : ''}`}>
 							<div
-								className={`ll-slide-html ll-layout-${currentSlide?.layout ?? 'standard'}`}
+								className={`ll-slide-html ll-layout-${currentSlide?.layout ?? 'standard'}${stageLightTheme ? ' ll-theme-light' : ''}`}
 								dangerouslySetInnerHTML={{ __html: currentSlide?.htmlContent ?? '' }}
 							/>
 						</div>
@@ -544,6 +544,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 					slides={slides}
 					currentSlideIndex={currentSlideIndex}
 					onSlideSelect={goToSlide}
+					lightTheme={stageLightTheme}
 				/>
 			)}
 		</div>
