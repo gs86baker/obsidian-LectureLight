@@ -56,34 +56,43 @@ export const PRESENTER_CSS = `
 
 .ll-presenter-root .ll-header {
 	display: flex !important;
-	align-items: center !important;
+	align-items: flex-start !important;
 	justify-content: space-between !important;
-	padding: 8px 16px !important;
+	padding: 10px 16px !important;
 	background: #0d1b2e !important;
 	border-bottom: 2px solid #2d4a6b !important;
 	flex-shrink: 0 !important;
-	gap: 8px !important;
+	gap: 10px !important;
 }
 
 .ll-presenter-root .ll-header-left,
 .ll-presenter-root .ll-header-right {
 	display: flex !important;
 	align-items: center !important;
-	gap: 6px !important;
+	gap: 8px !important;
+}
+
+.ll-presenter-root .ll-header-right {
+	flex-wrap: wrap !important;
+	justify-content: flex-end !important;
 }
 
 .ll-presenter-root .ll-slide-counter {
-	font-size: 13px !important;
+	font-size: 14px !important;
 	font-weight: 700 !important;
 	color: #94a3b8 !important;
-	min-width: 48px !important;
+	min-width: 56px !important;
 	text-align: center !important;
+	margin: 0 2px !important;
 }
 
 /* ── Buttons ── */
 
 .ll-presenter-root .ll-btn {
-	padding: 5px 12px !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	padding: 7px 12px !important;
 	border-radius: 6px !important;
 	border: 1px solid #2d4a6b !important;
 	background: #1a2e45 !important;
@@ -92,9 +101,10 @@ export const PRESENTER_CSS = `
 	font-weight: 600 !important;
 	cursor: pointer !important;
 	transition: background 0.15s !important;
-	line-height: 1.5 !important;
+	line-height: 1.4 !important;
 	white-space: nowrap !important;
 	box-shadow: none !important;
+	min-height: 34px !important;
 }
 
 .ll-presenter-root .ll-btn:hover:not(:disabled) {
@@ -107,14 +117,15 @@ export const PRESENTER_CSS = `
 }
 
 .ll-presenter-root .ll-btn-sm {
-	padding: 4px 8px !important;
-	font-size: 11px !important;
+	padding: 7px 11px !important;
+	font-size: 12px !important;
 }
 
 .ll-presenter-root .ll-btn-nav {
-	font-size: 16px !important;
+	font-size: 12px !important;
 	font-weight: 700 !important;
-	padding: 4px 10px !important;
+	padding: 7px 12px !important;
+	min-width: 96px !important;
 }
 
 .ll-presenter-root .ll-btn-start {
@@ -151,6 +162,36 @@ export const PRESENTER_CSS = `
 	border-color: #f59e0b !important;
 	color: #fef3c7 !important;
 	animation: ll-pulse 2s ease-in-out infinite !important;
+}
+
+.ll-presenter-root .ll-btn-content {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 7px !important;
+}
+
+.ll-presenter-root .ll-btn-icon {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+}
+
+.ll-presenter-root .ll-btn-icon-svg {
+	width: 14px !important;
+	height: 14px !important;
+	stroke: currentColor !important;
+	fill: none !important;
+}
+
+.ll-presenter-root .ll-btn-text {
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	letter-spacing: 0.01em !important;
+}
+
+.ll-presenter-root .ll-btn-record {
+	width: 100% !important;
 }
 
 @keyframes ll-pulse {
@@ -366,11 +407,13 @@ export const PRESENTER_CSS = `
 	flex: 1 !important;
 	display: flex !important;
 	flex-direction: column !important;
-	align-items: center !important;
-	justify-content: center !important;
-	padding: 20px 16px !important;
+	align-items: stretch !important;
+	justify-content: flex-start !important;
+	padding: 14px 14px 12px !important;
+	gap: 10px !important;
 	transition: background 0.4s !important;
 	min-height: 0 !important;
+	overflow-y: auto !important;
 }
 
 .ll-presenter-root .ll-timer--ready    { background: #1a2e45 !important; }
@@ -391,12 +434,43 @@ export const PRESENTER_CSS = `
 }
 
 .ll-presenter-root .ll-timer-label {
-	font-size: 10px !important;
-	font-weight: 800 !important;
-	text-transform: uppercase !important;
-	letter-spacing: 0.14em !important;
-	color: rgba(255, 255, 255, 0.6) !important;
-	margin-bottom: 10px !important;
+	font-size: 11px !important;
+	font-weight: 700 !important;
+	color: rgba(255, 255, 255, 0.85) !important;
+	margin-top: 3px !important;
+	text-transform: none !important;
+	letter-spacing: 0.02em !important;
+	text-align: center !important;
+}
+
+.ll-presenter-root .ll-timer-header {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: flex-start !important;
+}
+
+.ll-presenter-root .ll-timer-title {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	font-size: 14px !important;
+	font-weight: 700 !important;
+	color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.ll-presenter-root .ll-timer-title-icon {
+	width: 16px !important;
+	height: 16px !important;
+	stroke: currentColor !important;
+	fill: none !important;
+}
+
+.ll-presenter-root .ll-timer-main {
+	display: flex !important;
+	flex-direction: column !important;
+	align-items: center !important;
+	justify-content: center !important;
+	padding: 6px 0 2px !important;
 }
 
 .ll-presenter-root .ll-timer-display {
@@ -412,9 +486,14 @@ export const PRESENTER_CSS = `
 	font-size: 10px !important;
 	font-weight: 600 !important;
 	color: rgba(255, 255, 255, 0.4) !important;
-	margin-top: 12px !important;
+	margin-top: 2px !important;
 	text-transform: uppercase !important;
 	letter-spacing: 0.1em !important;
+	text-align: center !important;
+}
+
+.ll-presenter-root .ll-timer-extra {
+	margin-top: 6px !important;
 }
 
 /* ── Film strip ── */
@@ -617,38 +696,119 @@ export const PRESENTER_CSS = `
 	color: #ede9fe !important;
 }
 
-/* ── Recording panel (sidebar section) ── */
+/* ── Recording panel (inside timer) ── */
 
-.ll-presenter-root .ll-recording-section {
-	padding: 12px 14px !important;
-	border-top: 1px solid #2d4a6b !important;
-	flex-shrink: 0 !important;
+.ll-presenter-root .ll-recording-card {
+	background: rgba(255,255,255,0.12) !important;
+	border: 1px solid rgba(255,255,255,0.25) !important;
+	border-radius: 10px !important;
+	padding: 10px !important;
+	backdrop-filter: blur(2px) !important;
+}
+
+.ll-presenter-root .ll-recording-card-head {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 8px !important;
+}
+
+.ll-presenter-root .ll-recording-card-title {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	color: #f8fafc !important;
+}
+
+.ll-presenter-root .ll-recording-enable {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	font-size: 11px !important;
+	color: rgba(255,255,255,0.85) !important;
+}
+
+.ll-presenter-root .ll-recording-enable input {
+	width: 14px !important;
+	height: 14px !important;
+}
+
+.ll-presenter-root .ll-recording-ready {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	font-size: 11px !important;
+	font-weight: 700 !important;
+	color: #bbf7d0 !important;
+	margin-top: 8px !important;
+}
+
+.ll-presenter-root .ll-recording-ready-dot {
+	width: 7px !important;
+	height: 7px !important;
+	border-radius: 50% !important;
+	background: #22c55e !important;
+}
+
+.ll-presenter-root .ll-recording-controls {
+	display: grid !important;
+	grid-template-columns: 1fr !important;
+	gap: 8px !important;
+	margin-top: 8px !important;
 }
 
 /* Level meter */
 
 .ll-presenter-root .ll-level-meter-wrap {
 	margin-top: 8px !important;
-	height: 6px !important;
-	background: #1a2e45 !important;
-	border-radius: 3px !important;
-	overflow: hidden !important;
+	display: flex !important;
+	align-items: center !important;
+	gap: 8px !important;
 }
 
-.ll-presenter-root .ll-level-meter-bar {
-	height: 100% !important;
-	border-radius: 3px !important;
-	background: #059669 !important;
-	transition: width 0.05s linear !important;
-	min-width: 0 !important;
+.ll-presenter-root .ll-level-meter-grid {
+	flex: 1 !important;
+	height: 16px !important;
+	padding: 2px !important;
+	display: grid !important;
+	grid-template-columns: repeat(24, minmax(0, 1fr)) !important;
+	gap: 2px !important;
+	background: #122237 !important;
+	border: 1px solid #2d4a6b !important;
+	border-radius: 4px !important;
 }
 
-.ll-presenter-root .ll-level-meter-bar--warning {
+.ll-presenter-root .ll-level-segment {
+	border-radius: 1px !important;
+	background: #27435e !important;
+	transition: background-color 0.04s linear, box-shadow 0.04s linear !important;
+}
+
+.ll-presenter-root .ll-level-segment.ll-level-segment--active {
+	background: #10b981 !important;
+	box-shadow: 0 0 4px rgba(16, 185, 129, 0.45) !important;
+}
+
+.ll-presenter-root .ll-level-segment.ll-level-segment--warn-zone.ll-level-segment--active {
 	background: #fc7e14 !important;
+	box-shadow: 0 0 4px rgba(252, 126, 20, 0.5) !important;
 }
 
-.ll-presenter-root .ll-level-meter-bar--peak {
+.ll-presenter-root .ll-level-segment.ll-level-segment--peak-zone.ll-level-segment--active {
 	background: #dc3444 !important;
+	box-shadow: 0 0 5px rgba(220, 52, 68, 0.55) !important;
+}
+
+.ll-presenter-root .ll-level-meter-value {
+	width: 34px !important;
+	font-size: 10px !important;
+	font-weight: 700 !important;
+	letter-spacing: 0.02em !important;
+	color: #cbd5e1 !important;
+	text-align: right !important;
+	font-variant-numeric: tabular-nums !important;
 }
 
 /* Recording status row */

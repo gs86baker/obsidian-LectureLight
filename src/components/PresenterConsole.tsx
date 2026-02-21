@@ -10,6 +10,28 @@ import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { logger } from '../lib/logger';
 import { saveRecording, appendSessionLinks } from '../lib/vaultSave';
 
+const BtnIcon: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+	<svg
+		className="ll-btn-icon-svg"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="2"
+		strokeLinecap="round"
+		strokeLinejoin="round"
+		aria-hidden="true"
+	>
+		{children}
+	</svg>
+);
+
+const BtnContent: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
+	<span className="ll-btn-content">
+		<span className="ll-btn-icon">{icon}</span>
+		<span className="ll-btn-text">{label}</span>
+	</span>
+);
+
 interface PresenterConsoleProps {
 	parseResult: ParseResult | null;
 	settings:    LectureLightSettings;
@@ -25,6 +47,8 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 	const [isStageOpen,          setIsStageOpen]          = useState(false);
 	const [stageLightTheme,      setStageLightTheme]      = useState(false);
 	const [isSaving,             setIsSaving]             = useState(false);
+	const [isMicEnabled,         setIsMicEnabled]         = useState(true);
+	const [sessionHasAudio,      setSessionHasAudio]      = useState(false);
 
 	const channelRef = useRef<BroadcastChannel | null>(null);
 
@@ -90,6 +114,11 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 			releaseRecorder();
 		};
 	}, [app, releaseRecorder]);
+
+	// Turning off microphone capture should immediately release any active mic stream.
+	useEffect(() => {
+		if (!isMicEnabled) releaseRecorder();
+	}, [isMicEnabled, releaseRecorder]);
 
 	const currentSlide = slides[currentSlideIndex];
 
@@ -167,7 +196,8 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 			// Stop: halt timer immediately, then collect recording and save.
 			setIsSessionActive(false);
 			const sessionLog = logger.stopSession();
-			const blob       = await stopRecording();
+			const blob = sessionHasAudio ? await stopRecording() : null;
+			setSessionHasAudio(false);
 
 			if (blob && sessionLog) {
 				setIsSaving(true);
@@ -191,16 +221,23 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 			if (currentSlide) {
 				logger.trackSlideChange(currentSlideIndex, currentSlide.label);
 			}
-			await startRecording();
+			if (isMicEnabled) {
+				await startRecording();
+				setSessionHasAudio(true);
+			} else {
+				setSessionHasAudio(false);
+			}
 			// Start the session even if mic permission was denied (timer still runs).
 			setIsSessionActive(true);
 		}
 	}, [
 		isSessionActive,
+		sessionHasAudio,
 		currentSlideIndex,
 		currentSlide,
 		timerSettings,
 		mimeType,
+		isMicEnabled,
 		app,
 		settings.recordingFolder,
 		startRecording,
@@ -254,13 +291,10 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 
 	const isRecording  = recorderStatus === 'recording';
 	const isTesting    = recorderStatus === 'testing';
-	const meterVisible = isRecording || isTesting;
-	const levelPct     = `${Math.min(level * 100, 100).toFixed(1)}%`;
-	const meterClass   = level > 0.8
-		? 'll-level-meter-bar ll-level-meter-bar--peak'
-		: level > 0.6
-			? 'll-level-meter-bar ll-level-meter-bar--warning'
-			: 'll-level-meter-bar';
+	const meterVisible = isMicEnabled && (isRecording || isTesting);
+	const meterPercent = Math.round(Math.min(level * 100, 100));
+	const meterSegmentCount = 24;
+	const activeSegments = Math.round((meterPercent / 100) * meterSegmentCount);
 
 	// ── Render ─────────────────────────────────────────────────────────────────
 
@@ -274,7 +308,12 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 						onClick={() => goToSlide(currentSlideIndex - 1)}
 						disabled={currentSlideIndex === 0}
 						aria-label="Previous slide"
-					>←</button>
+					>
+						<BtnContent
+							icon={<BtnIcon><polyline points="15 18 9 12 15 6" /></BtnIcon>}
+							label="Previous"
+						/>
+					</button>
 					<span className="ll-slide-counter">
 						{currentSlideIndex + 1} / {slides.length}
 					</span>
@@ -283,7 +322,12 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 						onClick={() => goToSlide(currentSlideIndex + 1)}
 						disabled={currentSlideIndex === slides.length - 1}
 						aria-label="Next slide"
-					>→</button>
+					>
+						<BtnContent
+							icon={<BtnIcon><polyline points="9 18 15 12 9 6" /></BtnIcon>}
+							label="Next"
+						/>
+					</button>
 				</div>
 
 				<div className="ll-header-right">
@@ -291,50 +335,56 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 						className="ll-btn ll-btn-sm"
 						onClick={() => setTeleprompterFontSize(s => Math.max(14, s - 2))}
 						aria-label="Decrease font size"
-					>A−</button>
+					>
+						Text -
+					</button>
 					<button
 						className="ll-btn ll-btn-sm"
 						onClick={() => setTeleprompterFontSize(s => Math.min(36, s + 2))}
 						aria-label="Increase font size"
-					>A+</button>
+					>
+						Text +
+					</button>
 					<button
 						className="ll-btn ll-btn-sm"
 						onClick={() => setElapsedSeconds(0)}
 						aria-label="Reset timer"
-					>↺</button>
+					>
+						<BtnContent
+							icon={<BtnIcon><path d="M3 12a9 9 0 1 0 3-6.7" /><polyline points="3 3 3 9 9 9" /></BtnIcon>}
+							label="Reset"
+						/>
+					</button>
 					<button
 						className={`ll-btn ll-btn-sm${stageLightTheme ? ' ll-btn-theme-active' : ''}`}
 						onClick={toggleTheme}
 						aria-label="Toggle stage theme"
-					>☀</button>
+					>
+						<BtnContent
+							icon={<BtnIcon><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></BtnIcon>}
+							label="Stage theme"
+						/>
+					</button>
 					<button
 						className={`ll-btn ll-btn-sm${isStageOpen ? ' ll-btn-stage-active' : ''}`}
 						onClick={() => { void openStage(); }}
-						aria-label="Open stage window"
+						aria-label="Open stage display"
 					>
-						{isStageOpen ? '⊡ Live' : '⊡ Stage'}
-					</button>
-					<button
-						className={`ll-btn ll-btn-sm${isTesting ? ' ll-btn-mic-active' : ''}`}
-						onClick={() => { void testMic(); }}
-						disabled={isSessionActive || isSaving}
-						aria-label="Test microphone"
-					>
-						{isTesting ? 'Mic on' : 'Test mic'}
-					</button>
-					<button
-						className={`ll-btn ${isSessionActive ? 'll-btn-stop' : 'll-btn-start'}`}
-						onClick={() => { void handleSessionToggle(); }}
-						disabled={isSaving}
-						aria-label={isSessionActive ? 'Stop session and save recording' : 'Start session and recording'}
-					>
-						{isSaving ? 'Saving…' : isSessionActive ? 'Stop' : 'Start'}
+						<BtnContent
+							icon={<BtnIcon><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8" /><path d="M12 16v4" /></BtnIcon>}
+							label="Stage display"
+						/>
 					</button>
 					<button
 						className={`ll-btn ll-btn-sm${isFilmStripVisible ? ' ll-btn-active' : ''}`}
 						onClick={() => setIsFilmStripVisible(v => !v)}
 						aria-label="Toggle film strip"
-					>☰</button>
+					>
+						<BtnContent
+							icon={<BtnIcon><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 5v14" /><path d="M17 5v14" /><path d="M3 9h4" /><path d="M17 9h4" /><path d="M3 15h4" /><path d="M17 15h4" /></BtnIcon>}
+							label="Film strip"
+						/>
+					</button>
 				</div>
 			</header>
 
@@ -369,47 +419,122 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 						elapsedSeconds={elapsedSeconds}
 						isActive={isSessionActive}
 						settings={timerSettings}
-					/>
-
-					{/* ── Recording panel ── */}
-					<div className="ll-recording-section">
-						<div className="ll-section-label">Recording</div>
-
-						{meterVisible && (
-							<div className="ll-level-meter-wrap">
-								<div className={meterClass} style={{ width: levelPct }} />
+					>
+						<div className="ll-recording-card">
+							<div className="ll-recording-card-head">
+								<div className="ll-recording-card-title">
+									<BtnIcon>
+										<rect x="9" y="3" width="6" height="11" rx="3" />
+										<path d="M6 10a6 6 0 0 0 12 0" />
+										<path d="M12 19v2" />
+										<path d="M9 21h6" />
+									</BtnIcon>
+									<span>Audio recording</span>
+								</div>
+								<label className="ll-recording-enable">
+									<input
+										type="checkbox"
+										checked={isMicEnabled}
+										onChange={(e) => setIsMicEnabled(e.target.checked)}
+										disabled={isSessionActive || isSaving}
+									/>
+									<span>Enable</span>
+								</label>
 							</div>
-						)}
 
-						{isRecording && (
-							<div className="ll-recording-status">
-								<span className="ll-recording-dot" />
-								<span>Recording</span>
+							{(isTesting || isRecording) && isMicEnabled && (
+								<div className="ll-recording-ready">
+									<span className="ll-recording-ready-dot" />
+									<span>Mic ready</span>
+								</div>
+							)}
+
+							<button
+								className={`ll-btn ll-btn-record${isTesting ? ' ll-btn-mic-active' : ''}`}
+								onClick={() => { void testMic(); }}
+								disabled={!isMicEnabled || isSessionActive || isSaving}
+								aria-label="Test microphone"
+							>
+								<BtnContent
+									icon={<BtnIcon><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M6 10a6 6 0 0 0 12 0" /><path d="M12 19v2" /><path d="M9 21h6" /></BtnIcon>}
+									label={isTesting ? 'Mic on' : 'Test mic'}
+								/>
+							</button>
+
+							<div className="ll-recording-controls">
+								<button
+									className={`ll-btn ll-btn-record ${isSessionActive ? 'll-btn-stop' : 'll-btn-start'}`}
+									onClick={() => { void handleSessionToggle(); }}
+									disabled={isSaving}
+									aria-label={isSessionActive ? 'Stop session and save recording' : 'Start session and recording'}
+								>
+									<BtnContent
+										icon={
+											isSaving
+												? <BtnIcon><path d="M12 4v4" /><path d="M12 16v4" /><path d="M4 12h4" /><path d="M16 12h4" /></BtnIcon>
+												: isSessionActive
+													? <BtnIcon><rect x="7" y="7" width="10" height="10" rx="1" /></BtnIcon>
+													: <BtnIcon><polygon points="9,7 18,12 9,17" /></BtnIcon>
+										}
+										label={isSaving ? 'Saving…' : isSessionActive ? 'Stop' : 'Start'}
+									/>
+								</button>
 							</div>
-						)}
 
-						{isTesting && (
-							<div className="ll-recording-status ll-recording-status--dim">
-								Mic active
-							</div>
-						)}
+							{meterVisible && (
+								<div className="ll-level-meter-wrap" aria-label={`Microphone level ${meterPercent}%`}>
+									<div className="ll-level-meter-grid">
+										{Array.from({ length: meterSegmentCount }, (_, index) => {
+											const isActive = index < activeSegments;
+											const isWarnZone = index >= Math.floor(meterSegmentCount * 0.75);
+											const isPeakZone = index >= Math.floor(meterSegmentCount * 0.9);
+											let cls = 'll-level-segment';
+											if (isActive) cls += ' ll-level-segment--active';
+											if (isWarnZone) cls += ' ll-level-segment--warn-zone';
+											if (isPeakZone) cls += ' ll-level-segment--peak-zone';
+											return <span key={index} className={cls} />;
+										})}
+									</div>
+									<div className="ll-level-meter-value">{meterPercent}%</div>
+								</div>
+							)}
 
-						{recorderStatus === 'requesting' && (
-							<div className="ll-recording-status ll-recording-status--dim">
-								Requesting mic…
-							</div>
-						)}
+							{!isMicEnabled && (
+								<div className="ll-recording-status ll-recording-status--dim">
+									Microphone disabled
+								</div>
+							)}
 
-						{isSaving && (
-							<div className="ll-recording-status ll-recording-status--dim">
-								Saving…
-							</div>
-						)}
+							{isRecording && (
+								<div className="ll-recording-status">
+									<span className="ll-recording-dot" />
+									<span>Recording</span>
+								</div>
+							)}
 
-						{recorderError && (
-							<div className="ll-recording-error">{recorderError}</div>
-						)}
-					</div>
+							{isTesting && (
+								<div className="ll-recording-status ll-recording-status--dim">
+									Mic active
+								</div>
+							)}
+
+							{recorderStatus === 'requesting' && (
+								<div className="ll-recording-status ll-recording-status--dim">
+									Requesting mic…
+								</div>
+							)}
+
+							{isSaving && (
+								<div className="ll-recording-status ll-recording-status--dim">
+									Saving…
+								</div>
+							)}
+
+							{recorderError && (
+								<div className="ll-recording-error">{recorderError}</div>
+							)}
+						</div>
+					</TrafficLightTimer>
 				</aside>
 			</div>
 

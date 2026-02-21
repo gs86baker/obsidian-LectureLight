@@ -33,12 +33,60 @@ async function ensureFolder(app: App, folderPath: string): Promise<void> {
 	}
 }
 
+interface VintResult {
+	length: number;
+	value: number;
+}
+
+function readVint(u8: Uint8Array, offset: number): VintResult | null {
+	const first = u8[offset];
+	if (first === undefined || first === 0) return null;
+
+	let length = 1;
+	let mask = 0x80;
+	while (length <= 8 && (first & mask) === 0) {
+		mask >>= 1;
+		length++;
+	}
+	if (length > 8) return null;
+	if (offset + length > u8.length) return null;
+
+	let value = first & (mask - 1);
+	for (let i = 1; i < length; i++) {
+		value = (value * 256) + (u8[offset + i] ?? 0);
+	}
+	return { length, value };
+}
+
+function findPattern(u8: Uint8Array, pattern: number[], from = 0, to = u8.length): number {
+	const limit = Math.min(to, u8.length) - pattern.length + 1;
+	for (let i = Math.max(0, from); i < limit; i++) {
+		let matched = true;
+		for (let j = 0; j < pattern.length; j++) {
+			if (u8[i + j] !== pattern[j]) {
+				matched = false;
+				break;
+			}
+		}
+		if (matched) return i;
+	}
+	return -1;
+}
+
+function readUnsignedBE(u8: Uint8Array, offset: number, byteLength: number): number {
+	let value = 0;
+	for (let i = 0; i < byteLength; i++) {
+		value = (value * 256) + (u8[offset + i] ?? 0);
+	}
+	return value;
+}
+
 /**
  * Patch the Duration field in a MediaRecorder WebM blob.
  * MediaRecorder often writes Duration = 0, which prevents the audio
  * element's scrubber from working correctly.  This scans for the EBML
  * Duration element (ID 0x4489) and overwrites it with the real value.
- * Chrome's default timescale is 1 000 000 ns/tick → duration in milliseconds.
+ * Duration is stored in Segment timecode units, so we also read TimecodeScale.
  */
 async function fixWebmDuration(blob: Blob, durationMs: number): Promise<Blob> {
 	if (!blob.type.startsWith('audio/webm') || durationMs <= 0) return blob;
@@ -46,29 +94,44 @@ async function fixWebmDuration(blob: Blob, durationMs: number): Promise<Blob> {
 		const buf  = await blob.arrayBuffer();
 		const u8   = new Uint8Array(buf);
 		const view = new DataView(buf);
-		// Duration lives in the Segment > Info section near the start of the file.
-		// Scan the first 4 KB to avoid false-matching audio data.
-		const limit = Math.min(u8.length - 12, 4096);
-		for (let i = 0; i < limit; i++) {
-			if (u8[i] === 0x44 && u8[i + 1] === 0x89) {
-				// 1-byte VINT sizes
-				if (u8[i + 2] === 0x88) {             // size = 8 → float64
-					view.setFloat64(i + 3, durationMs, false);
-					return new Blob([buf], { type: blob.type });
+
+		// Search metadata only (before first Cluster) to avoid false positives.
+		const firstCluster = findPattern(u8, [0x1f, 0x43, 0xb6, 0x75]);
+		const searchEnd = firstCluster > 0 ? firstCluster : Math.min(u8.length, 1024 * 1024);
+
+		// TimecodeScale (ID 0x2AD7B1) defaults to 1,000,000 ns if absent.
+		let timecodeScaleNs = 1_000_000;
+		const tcs = findPattern(u8, [0x2a, 0xd7, 0xb1], 0, searchEnd);
+		if (tcs >= 0) {
+			const sizeInfo = readVint(u8, tcs + 3);
+			if (sizeInfo && sizeInfo.value > 0 && sizeInfo.value <= 8) {
+				const dataOffset = tcs + 3 + sizeInfo.length;
+				if (dataOffset + sizeInfo.value <= u8.length) {
+					const parsed = readUnsignedBE(u8, dataOffset, sizeInfo.value);
+					if (parsed > 0) timecodeScaleNs = parsed;
 				}
-				if (u8[i + 2] === 0x84) {             // size = 4 → float32
-					view.setFloat32(i + 3, durationMs, false);
-					return new Blob([buf], { type: blob.type });
-				}
-				// 2-byte VINT sizes (some muxers use wider encoding)
-				if (u8[i + 2] === 0x40 && u8[i + 3] === 0x08) {  // size = 8 → float64
-					view.setFloat64(i + 4, durationMs, false);
-					return new Blob([buf], { type: blob.type });
-				}
-				if (u8[i + 2] === 0x40 && u8[i + 3] === 0x04) {  // size = 4 → float32
-					view.setFloat32(i + 4, durationMs, false);
-					return new Blob([buf], { type: blob.type });
-				}
+			}
+		}
+
+		// Duration value must be in Segment timecode units.
+		const durationInTimecodeUnits = durationMs * (1_000_000 / timecodeScaleNs);
+
+		// Duration element (ID 0x4489), followed by VINT size and float payload.
+		for (let i = 0; i < searchEnd - 2; i++) {
+			if (u8[i] !== 0x44 || u8[i + 1] !== 0x89) continue;
+			const sizeInfo = readVint(u8, i + 2);
+			if (!sizeInfo) continue;
+
+			const dataOffset = i + 2 + sizeInfo.length;
+			if (dataOffset + sizeInfo.value > u8.length) continue;
+
+			if (sizeInfo.value === 8) {
+				view.setFloat64(dataOffset, durationInTimecodeUnits, false);
+				return new Blob([buf], { type: blob.type });
+			}
+			if (sizeInfo.value === 4) {
+				view.setFloat32(dataOffset, durationInTimecodeUnits, false);
+				return new Blob([buf], { type: blob.type });
 			}
 		}
 	} catch {

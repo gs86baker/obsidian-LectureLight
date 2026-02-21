@@ -5,6 +5,7 @@ interface TrafficLightTimerProps {
 	elapsedSeconds: number;
 	isActive: boolean;
 	settings?: TimerSettings;
+	children?: React.ReactNode;
 }
 
 type TimerStatus = 'ready' | 'green' | 'yellow' | 'red' | 'overtime';
@@ -42,6 +43,7 @@ export const TrafficLightTimer: React.FC<TrafficLightTimerProps> = ({
 	elapsedSeconds,
 	isActive,
 	settings,
+	children,
 }) => {
 	const config = {
 		targetMinutes:  settings?.targetMinutes  ?? 30,
@@ -63,11 +65,35 @@ export const TrafficLightTimer: React.FC<TrafficLightTimerProps> = ({
 
 	return (
 		<div className={`ll-timer ll-timer--${status}`}>
-			<div className="ll-timer-label">{LABELS[status]}</div>
-			<div className="ll-timer-display">
-				{isOvertime ? '+' : ''}{formatTime(remainingSeconds)}
+			<div className="ll-timer-header">
+				<div className="ll-timer-title">
+					<svg
+						className="ll-timer-title-icon"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						aria-hidden="true"
+					>
+						<circle cx="12" cy="12" r="10" />
+						<polyline points="12 6 12 12 16 14" />
+					</svg>
+					<span>Speech timer</span>
+				</div>
 			</div>
+
+			<div className="ll-timer-main">
+				<div className="ll-timer-display">
+					{isOvertime ? '+' : ''}{formatTime(remainingSeconds)}
+				</div>
+				<div className="ll-timer-label">{LABELS[status]}</div>
+			</div>
+
 			<div className="ll-timer-target">Target: {config.targetMinutes}m</div>
+
+			{children ? <div className="ll-timer-extra">{children}</div> : null}
 		</div>
 	);
 };
