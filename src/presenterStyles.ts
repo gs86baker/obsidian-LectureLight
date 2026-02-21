@@ -253,6 +253,7 @@ export const PRESENTER_CSS = `
 
 .ll-presenter-root .ll-slide-trigger-snippet {
 	display: block !important;
+	box-sizing: border-box !important;
 	width: 100% !important;
 	min-width: 0 !important;
 	font-size: 11px !important;
@@ -383,9 +384,10 @@ export const PRESENTER_CSS = `
 
 @keyframes ll-urgent-pulse {
 	/* background: !important on the element blocks background animation.
-	   Animate filter instead — no specificity conflict, visible red ↔ bright pulse. */
-	0%, 100% { filter: brightness(1); }
-	50%       { filter: brightness(1.7); }
+	   Animate filter instead — hue-rotate shifts red toward orange,
+	   brightness adds subtle glow. White text is unaffected (no hue). */
+	0%, 100% { filter: hue-rotate(0deg) brightness(1); }
+	50%       { filter: hue-rotate(25deg) brightness(1.15); }
 }
 
 .ll-presenter-root .ll-timer-label {
