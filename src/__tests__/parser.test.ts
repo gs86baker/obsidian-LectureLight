@@ -3,6 +3,8 @@ import {
 	parseMarkdownToSlides,
 	countSpeakableWords,
 	formatDuration,
+	validateTimerSettings,
+	MAX_TARGET_MINUTES,
 } from '../lib/parser';
 
 // ---------------------------------------------------------------------------
@@ -363,5 +365,51 @@ describe('formatDuration', () => {
 	it('rounds fractional minutes', () => {
 		expect(formatDuration(30.4)).toBe('~30 min');
 		expect(formatDuration(30.6)).toBe('~31 min');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// validateTimerSettings
+// ---------------------------------------------------------------------------
+
+describe('validateTimerSettings', () => {
+	it('accepts a valid timer hierarchy', () => {
+		const result = validateTimerSettings({
+			targetMinutes: 45,
+			warningMinutes: 10,
+			wrapUpMinutes: 5,
+		});
+		expect(result.isValid).toBe(true);
+		expect(result.message).toBeNull();
+	});
+
+	it('rejects target values over the maximum', () => {
+		const result = validateTimerSettings({
+			targetMinutes: MAX_TARGET_MINUTES + 1,
+			warningMinutes: 10,
+			wrapUpMinutes: 5,
+		});
+		expect(result.isValid).toBe(false);
+		expect(result.message).toContain('Maximum is 120 minutes');
+	});
+
+	it('rejects warning values greater than target', () => {
+		const result = validateTimerSettings({
+			targetMinutes: 30,
+			warningMinutes: 31,
+			wrapUpMinutes: 5,
+		});
+		expect(result.isValid).toBe(false);
+		expect(result.message).toContain('Warning cannot exceed target');
+	});
+
+	it('rejects wrap-up values greater than warning', () => {
+		const result = validateTimerSettings({
+			targetMinutes: 30,
+			warningMinutes: 5,
+			wrapUpMinutes: 6,
+		});
+		expect(result.isValid).toBe(false);
+		expect(result.message).toContain('Wrap-up cannot exceed warning');
 	});
 });

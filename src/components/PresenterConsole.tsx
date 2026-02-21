@@ -9,6 +9,7 @@ import { VIEW_TYPE_STAGE } from '../stageView';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { logger } from '../lib/logger';
 import { saveRecording, appendSessionLinks } from '../lib/vaultSave';
+import { MAX_TARGET_MINUTES, validateTimerSettings } from '../lib/parser';
 
 const BtnIcon: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 	<svg
@@ -71,6 +72,8 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 		warningMinutes: settings.warningMinutes,
 		wrapUpMinutes:  settings.wrapUpMinutes,
 	};
+	const timerValidation = validateTimerSettings(timerSettings);
+	const showTimerPlaceholder = timerSettings.targetMinutes > MAX_TARGET_MINUTES;
 
 	// Clamp the slide index when a note edit removes slides
 	useEffect(() => {
@@ -216,6 +219,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 				}
 			}
 		} else {
+			if (!timerValidation.isValid) return;
 			// Start: initialise logger, request mic, begin recording.
 			logger.startSession(crypto.randomUUID(), timerSettings);
 			if (currentSlide) {
@@ -236,6 +240,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 		currentSlideIndex,
 		currentSlide,
 		timerSettings,
+		timerValidation.isValid,
 		mimeType,
 		isMicEnabled,
 		app,
@@ -291,7 +296,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 
 	const isRecording  = recorderStatus === 'recording';
 	const isTesting    = recorderStatus === 'testing';
-	const meterVisible = isMicEnabled && (isRecording || isTesting);
+	const meterVisible = isMicEnabled && isTesting;
 	const meterPercent = Math.round(Math.min(level * 100, 100));
 	const meterSegmentCount = 24;
 	const activeSegments = Math.round((meterPercent / 100) * meterSegmentCount);
@@ -300,104 +305,65 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 
 	return (
 		<div className={`ll-presenter${stageLightTheme ? ' ll-stage-light' : ''}`}>
-			{/* ── Header ── */}
-			<header className="ll-header">
-				<div className="ll-header-left">
-					<button
-						className="ll-btn ll-btn-nav"
-						onClick={() => goToSlide(currentSlideIndex - 1)}
-						disabled={currentSlideIndex === 0}
-						aria-label="Previous slide"
-					>
-						<BtnContent
-							icon={<BtnIcon><polyline points="15 18 9 12 15 6" /></BtnIcon>}
-							label="Previous"
-						/>
-					</button>
-					<span className="ll-slide-counter">
-						{currentSlideIndex + 1} / {slides.length}
-					</span>
-					<button
-						className="ll-btn ll-btn-nav"
-						onClick={() => goToSlide(currentSlideIndex + 1)}
-						disabled={currentSlideIndex === slides.length - 1}
-						aria-label="Next slide"
-					>
-						<BtnContent
-							icon={<BtnIcon><polyline points="9 18 15 12 9 6" /></BtnIcon>}
-							label="Next"
-						/>
-					</button>
-				</div>
-
-				<div className="ll-header-right">
-					<button
-						className="ll-btn ll-btn-sm"
-						onClick={() => setTeleprompterFontSize(s => Math.max(14, s - 2))}
-						aria-label="Decrease font size"
-					>
-						Text -
-					</button>
-					<button
-						className="ll-btn ll-btn-sm"
-						onClick={() => setTeleprompterFontSize(s => Math.min(36, s + 2))}
-						aria-label="Increase font size"
-					>
-						Text +
-					</button>
-					<button
-						className="ll-btn ll-btn-sm"
-						onClick={() => setElapsedSeconds(0)}
-						aria-label="Reset timer"
-					>
-						<BtnContent
-							icon={<BtnIcon><path d="M3 12a9 9 0 1 0 3-6.7" /><polyline points="3 3 3 9 9 9" /></BtnIcon>}
-							label="Reset"
-						/>
-					</button>
-					<button
-						className={`ll-btn ll-btn-sm${stageLightTheme ? ' ll-btn-theme-active' : ''}`}
-						onClick={toggleTheme}
-						aria-label="Toggle stage theme"
-					>
-						<BtnContent
-							icon={<BtnIcon><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></BtnIcon>}
-							label="Stage theme"
-						/>
-					</button>
-					<button
-						className={`ll-btn ll-btn-sm${isStageOpen ? ' ll-btn-stage-active' : ''}`}
-						onClick={() => { void openStage(); }}
-						aria-label="Open stage display"
-					>
-						<BtnContent
-							icon={<BtnIcon><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8" /><path d="M12 16v4" /></BtnIcon>}
-							label="Stage display"
-						/>
-					</button>
-					<button
-						className={`ll-btn ll-btn-sm${isFilmStripVisible ? ' ll-btn-active' : ''}`}
-						onClick={() => setIsFilmStripVisible(v => !v)}
-						aria-label="Toggle film strip"
-					>
-						<BtnContent
-							icon={<BtnIcon><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 5v14" /><path d="M17 5v14" /><path d="M3 9h4" /><path d="M17 9h4" /><path d="M3 15h4" /><path d="M17 15h4" /></BtnIcon>}
-							label="Film strip"
-						/>
-					</button>
-				</div>
-			</header>
-
 			{/* ── Main content ── */}
 			<div className="ll-body">
-				{/* Teleprompter (left, scrollable) */}
-				<div className="ll-teleprompter-panel">
-					<Teleprompter
-						slides={slides}
-						currentSlideIndex={currentSlideIndex}
-						onSlideSelect={goToSlide}
-						fontSize={teleprompterFontSize}
-					/>
+				<div className="ll-main-column">
+					{/* ── Header ── */}
+						<header className="ll-header">
+							<div className="ll-header-left">
+							<button
+								className="ll-btn ll-btn-nav"
+								onClick={() => goToSlide(currentSlideIndex - 1)}
+								disabled={currentSlideIndex === 0}
+								aria-label="Previous slide"
+							>
+								<BtnContent
+									icon={<BtnIcon><polyline points="15 18 9 12 15 6" /></BtnIcon>}
+									label="Previous"
+								/>
+							</button>
+							<span className="ll-slide-counter">
+								{currentSlideIndex + 1} / {slides.length}
+							</span>
+							<button
+								className="ll-btn ll-btn-nav"
+								onClick={() => goToSlide(currentSlideIndex + 1)}
+								disabled={currentSlideIndex === slides.length - 1}
+								aria-label="Next slide"
+							>
+								<BtnContent
+									icon={<BtnIcon><polyline points="9 18 15 12 9 6" /></BtnIcon>}
+									label="Next"
+								/>
+							</button>
+							</div>
+							<div className="ll-header-right">
+								<button
+									className="ll-btn ll-btn-sm"
+									onClick={() => setTeleprompterFontSize(s => Math.max(14, s - 2))}
+									aria-label="Decrease font size"
+								>
+									Text -
+								</button>
+								<button
+									className="ll-btn ll-btn-sm"
+									onClick={() => setTeleprompterFontSize(s => Math.min(36, s + 2))}
+									aria-label="Increase font size"
+								>
+									Text +
+								</button>
+							</div>
+						</header>
+
+					{/* Teleprompter (left, scrollable) */}
+					<div className="ll-teleprompter-panel">
+						<Teleprompter
+							slides={slides}
+							currentSlideIndex={currentSlideIndex}
+							onSlideSelect={goToSlide}
+							fontSize={teleprompterFontSize}
+						/>
+					</div>
 				</div>
 
 				{/* Sidebar (right, fixed width) */}
@@ -413,59 +379,59 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 						<div className="ll-slide-label">
 							{currentSlide?.label ?? `Slide ${currentSlideIndex + 1}`}
 						</div>
-					</div>
-
-					<TrafficLightTimer
-						elapsedSeconds={elapsedSeconds}
-						isActive={isSessionActive}
-						settings={timerSettings}
-					>
-						<div className="ll-recording-card">
-							<div className="ll-recording-card-head">
-								<div className="ll-recording-card-title">
-									<BtnIcon>
-										<rect x="9" y="3" width="6" height="11" rx="3" />
-										<path d="M6 10a6 6 0 0 0 12 0" />
-										<path d="M12 19v2" />
-										<path d="M9 21h6" />
-									</BtnIcon>
-									<span>Audio recording</span>
-								</div>
-								<label className="ll-recording-enable">
-									<input
-										type="checkbox"
-										checked={isMicEnabled}
-										onChange={(e) => setIsMicEnabled(e.target.checked)}
-										disabled={isSessionActive || isSaving}
-									/>
-									<span>Enable</span>
-								</label>
-							</div>
-
-							{(isTesting || isRecording) && isMicEnabled && (
-								<div className="ll-recording-ready">
-									<span className="ll-recording-ready-dot" />
-									<span>Mic ready</span>
-								</div>
-							)}
-
+						<div className="ll-preview-controls">
 							<button
-								className={`ll-btn ll-btn-record${isTesting ? ' ll-btn-mic-active' : ''}`}
-								onClick={() => { void testMic(); }}
-								disabled={!isMicEnabled || isSessionActive || isSaving}
-								aria-label="Test microphone"
+								className={`ll-btn ll-btn-preview-stage${isStageOpen ? ' ll-btn-stage-active' : ''}`}
+								onClick={() => { void openStage(); }}
+								aria-label="Open stage display"
 							>
 								<BtnContent
-									icon={<BtnIcon><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M6 10a6 6 0 0 0 12 0" /><path d="M12 19v2" /><path d="M9 21h6" /></BtnIcon>}
-									label={isTesting ? 'Mic on' : 'Test mic'}
+									icon={<BtnIcon><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8" /><path d="M12 16v4" /></BtnIcon>}
+									label="Stage display"
 								/>
 							</button>
+							<button
+								className={`ll-btn ll-btn-icon-only ll-btn-preview-theme ${stageLightTheme ? 'll-btn-preview-theme--light' : 'll-btn-preview-theme--dark'}`}
+								onClick={toggleTheme}
+								aria-label={stageLightTheme ? 'Switch stage theme to dark mode' : 'Switch stage theme to light mode'}
+							>
+								<span className="ll-btn-icon" aria-hidden="true">
+									{stageLightTheme
+										? (
+											<BtnIcon>
+												<circle cx="12" cy="12" r="4" />
+												<path d="M12 2v2" />
+												<path d="M12 20v2" />
+												<path d="m4.93 4.93 1.41 1.41" />
+												<path d="m17.66 17.66 1.41 1.41" />
+												<path d="M2 12h2" />
+												<path d="M20 12h2" />
+												<path d="m6.34 17.66-1.41 1.41" />
+												<path d="m19.07 4.93-1.41 1.41" />
+											</BtnIcon>
+										)
+										: (
+											<BtnIcon>
+												<path d="M21 12.8A9 9 0 1 1 11.2 3a7.5 7.5 0 1 0 9.8 9.8z" />
+											</BtnIcon>
+										)}
+								</span>
+							</button>
+						</div>
+					</div>
 
-							<div className="ll-recording-controls">
+						<TrafficLightTimer
+							elapsedSeconds={elapsedSeconds}
+							isActive={isSessionActive}
+							settings={timerSettings}
+							errorMessage={timerValidation.message}
+							showTimePlaceholder={showTimerPlaceholder}
+						>
+							<div className="ll-session-controls">
 								<button
-									className={`ll-btn ll-btn-record ${isSessionActive ? 'll-btn-stop' : 'll-btn-start'}`}
+									className={`ll-btn ll-btn-record ll-session-start ${isSessionActive ? 'll-btn-stop' : 'll-btn-start'}`}
 									onClick={() => { void handleSessionToggle(); }}
-									disabled={isSaving}
+									disabled={isSaving || (!isSessionActive && !timerValidation.isValid)}
 									aria-label={isSessionActive ? 'Stop session and save recording' : 'Start session and recording'}
 								>
 									<BtnContent
@@ -479,64 +445,127 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 										label={isSaving ? 'Saving…' : isSessionActive ? 'Stop' : 'Start'}
 									/>
 								</button>
+								<button
+									className="ll-btn ll-session-reset"
+									onClick={() => setElapsedSeconds(0)}
+									disabled={isSaving}
+									aria-label="Reset timer"
+								>
+									<BtnContent
+										icon={<BtnIcon><path d="M3 12a9 9 0 1 0 3-6.7" /><polyline points="3 3 3 9 9 9" /></BtnIcon>}
+										label="Reset"
+									/>
+								</button>
 							</div>
 
-							{meterVisible && (
-								<div className="ll-level-meter-wrap" aria-label={`Microphone level ${meterPercent}%`}>
-									<div className="ll-level-meter-grid">
-										{Array.from({ length: meterSegmentCount }, (_, index) => {
-											const isActive = index < activeSegments;
-											const isWarnZone = index >= Math.floor(meterSegmentCount * 0.75);
-											const isPeakZone = index >= Math.floor(meterSegmentCount * 0.9);
-											let cls = 'll-level-segment';
-											if (isActive) cls += ' ll-level-segment--active';
-											if (isWarnZone) cls += ' ll-level-segment--warn-zone';
-											if (isPeakZone) cls += ' ll-level-segment--peak-zone';
-											return <span key={index} className={cls} />;
-										})}
+							<div className="ll-recording-card">
+								<div className="ll-recording-card-head">
+									<div className="ll-recording-card-title">
+										<BtnIcon>
+											<rect x="9" y="3" width="6" height="11" rx="3" />
+											<path d="M6 10a6 6 0 0 0 12 0" />
+											<path d="M12 19v2" />
+											<path d="M9 21h6" />
+										</BtnIcon>
+										<span>Audio recording</span>
 									</div>
-									<div className="ll-level-meter-value">{meterPercent}%</div>
+									<label className="ll-recording-enable">
+										<input
+											type="checkbox"
+											checked={isMicEnabled}
+											onChange={(e) => setIsMicEnabled(e.target.checked)}
+											disabled={isSessionActive || isSaving}
+										/>
+										<span>Enable</span>
+									</label>
 								</div>
-							)}
 
-							{!isMicEnabled && (
-								<div className="ll-recording-status ll-recording-status--dim">
-									Microphone disabled
-								</div>
-							)}
+								{(isTesting || isRecording) && isMicEnabled && (
+									<div className="ll-recording-ready">
+										<span className="ll-recording-ready-dot" />
+										<span>Mic ready</span>
+									</div>
+								)}
 
-							{isRecording && (
-								<div className="ll-recording-status">
-									<span className="ll-recording-dot" />
-									<span>Recording</span>
-								</div>
-							)}
+								<button
+									className={`ll-btn ll-btn-record${isTesting ? ' ll-btn-mic-active' : ''}`}
+									onClick={() => { void testMic(); }}
+									disabled={!isMicEnabled || isSessionActive || isSaving}
+									aria-label="Test microphone"
+								>
+									<BtnContent
+										icon={<BtnIcon><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M6 10a6 6 0 0 0 12 0" /><path d="M12 19v2" /><path d="M9 21h6" /></BtnIcon>}
+										label={isTesting ? 'Mic on' : 'Test mic'}
+									/>
+								</button>
 
-							{isTesting && (
-								<div className="ll-recording-status ll-recording-status--dim">
-									Mic active
-								</div>
-							)}
+								{meterVisible && (
+									<div className="ll-level-meter-wrap" aria-label={`Microphone level ${meterPercent}%`}>
+										<span className="ll-level-meter-icon" aria-hidden="true">
+											<BtnIcon>
+												<path d="M11 4.7a.7.7 0 0 0-1.2-.5L6.4 7.6A1.4 1.4 0 0 1 5.4 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.4a1.4 1.4 0 0 1 1 .4l3.4 3.4a.7.7 0 0 0 1.2-.5z" />
+												<path d="M16 9a5 5 0 0 1 0 6" />
+												<path d="M19.4 18.4a9 9 0 0 0 0-12.8" />
+											</BtnIcon>
+										</span>
+										<div className="ll-level-meter-grid">
+											{Array.from({ length: meterSegmentCount }, (_, index) => {
+												const isActive = index < activeSegments;
+												const isWarnZone = index >= Math.floor(meterSegmentCount * 0.75);
+												const isPeakZone = index >= Math.floor(meterSegmentCount * 0.9);
+												let cls = 'll-level-segment';
+												if (isActive) cls += ' ll-level-segment--active';
+												if (isWarnZone) cls += ' ll-level-segment--warn-zone';
+												if (isPeakZone) cls += ' ll-level-segment--peak-zone';
+												return <span key={index} className={cls} />;
+											})}
+										</div>
+									</div>
+								)}
 
-							{recorderStatus === 'requesting' && (
-								<div className="ll-recording-status ll-recording-status--dim">
-									Requesting mic…
-								</div>
-							)}
+								{!isMicEnabled && (
+									<div className="ll-recording-status ll-recording-status--dim">
+										Microphone disabled
+									</div>
+								)}
 
-							{isSaving && (
-								<div className="ll-recording-status ll-recording-status--dim">
-									Saving…
-								</div>
-							)}
+								{isRecording && (
+									<div className="ll-recording-status">
+										<span className="ll-recording-dot" />
+										<span>Recording</span>
+									</div>
+								)}
 
-							{recorderError && (
-								<div className="ll-recording-error">{recorderError}</div>
-							)}
-						</div>
-					</TrafficLightTimer>
-				</aside>
-			</div>
+								{recorderStatus === 'requesting' && (
+									<div className="ll-recording-status ll-recording-status--dim">
+										Requesting mic…
+									</div>
+								)}
+
+								{isSaving && (
+									<div className="ll-recording-status ll-recording-status--dim">
+										Saving…
+									</div>
+								)}
+
+								{recorderError && (
+									<div className="ll-recording-error">{recorderError}</div>
+								)}
+							</div>
+
+							<button
+								className={`ll-btn ll-btn-record${isFilmStripVisible ? ' ll-btn-active' : ''}`}
+								onClick={() => setIsFilmStripVisible(v => !v)}
+								aria-label="Toggle film strip"
+							>
+								<BtnContent
+									icon={<BtnIcon><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 5v14" /><path d="M17 5v14" /><path d="M3 9h4" /><path d="M17 9h4" /><path d="M3 15h4" /><path d="M17 15h4" /></BtnIcon>}
+									label="Toggle Film Strip"
+								/>
+							</button>
+						</TrafficLightTimer>
+					</aside>
+				</div>
 
 			{/* ── FilmStrip (bottom, collapsible) ── */}
 			{isFilmStripVisible && (
