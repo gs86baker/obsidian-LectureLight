@@ -1,4 +1,4 @@
-import { App, normalizePath } from 'obsidian';
+import { App, TFile, normalizePath } from 'obsidian';
 import type { SessionLog } from './logger';
 
 const DEFAULT_RECORDINGS_FOLDER = 'LectureLight/Recordings';
@@ -189,9 +189,17 @@ export async function appendSessionLinks(
 	audioPath: string,
 	jsonPath:  string,
 	startTime: string,
-): Promise<void> {
-	const activeFile = app.workspace.getActiveFile();
-	if (!activeFile) return;
+	targetFilePath?: string | null,
+): Promise<boolean> {
+	let targetFile: TFile | null = null;
+	if (targetFilePath) {
+		const candidate = app.vault.getAbstractFileByPath(normalizePath(targetFilePath));
+		if (candidate instanceof TFile) targetFile = candidate;
+	}
+	if (!targetFile) {
+		targetFile = app.workspace.getActiveFile();
+	}
+	if (!targetFile) return false;
 
 	const date = new Date(startTime).toLocaleDateString('en-US', {
 		year: 'numeric', month: 'long', day: 'numeric',
@@ -202,5 +210,6 @@ export async function appendSessionLinks(
 		`![[${audioPath}]]\n\n` +
 		`[[${jsonPath}]]\n`;
 
-	await app.vault.process(activeFile, (content) => content + section);
+	await app.vault.process(targetFile, (content) => content + section);
+	return true;
 }

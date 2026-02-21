@@ -15,7 +15,7 @@ export interface UseAudioRecorderReturn {
 	 *  Calling again while testing stops the test and releases the mic. */
 	testMic: () => Promise<void>;
 	/** Acquire mic and start recording. Resolves once MediaRecorder is running. */
-	startRecording: () => Promise<void>;
+	startRecording: () => Promise<boolean>;
 	/** Stop the active recording. Resolves with the assembled audio Blob, or null
 	 *  if no recording was active. The mic is released after stop. */
 	stopRecording: () => Promise<Blob | null>;
@@ -165,26 +165,38 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 		setStatus('testing');
 	}, [status, acquireStream, release, startLevelMeter]);
 
-	const startRecording = useCallback(async () => {
-		if (status === 'recording') return;
+	const startRecording = useCallback(async (): Promise<boolean> => {
+		if (status === 'recording') return true;
 		const stream = await acquireStream();
-		if (!stream) return;
+		if (!stream) return false;
 
-		chunksRef.current = [];
-		const options  = mimeType ? { mimeType } : undefined;
-		const recorder = new MediaRecorder(stream, options);
-		recorderRef.current = recorder;
+		try {
+			chunksRef.current = [];
+			const options  = mimeType ? { mimeType } : undefined;
+			const recorder = new MediaRecorder(stream, options);
+			recorderRef.current = recorder;
 
-		recorder.ondataavailable = (e: BlobEvent) => {
-			if (e.data.size > 0) chunksRef.current.push(e.data);
-		};
+			recorder.ondataavailable = (e: BlobEvent) => {
+				if (e.data.size > 0) chunksRef.current.push(e.data);
+			};
 
-		// Start without a timeslice so the recorder can finalize container metadata
-		// (especially duration) in one stream at stop.
-		recorder.start();
-		startLevelMeter(stream);
-		setStatus('recording');
-		setError(null);
+			// Start without a timeslice so the recorder can finalize container metadata
+			// (especially duration) in one stream at stop.
+			recorder.start();
+			startLevelMeter(stream);
+			setStatus('recording');
+			setError(null);
+			return true;
+		} catch (err) {
+			stream.getTracks().forEach(t => t.stop());
+			streamRef.current = null;
+			recorderRef.current = null;
+			chunksRef.current = [];
+			stopLevelMeter();
+			setStatus('error');
+			setError(`Could not start recording: ${err instanceof Error ? err.message : String(err)}`);
+			return false;
+		}
 	}, [status, mimeType, acquireStream, startLevelMeter]);
 
 	const stopRecording = useCallback((): Promise<Blob | null> => {

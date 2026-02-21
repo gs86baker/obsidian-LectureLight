@@ -12,6 +12,8 @@ export default class LectureLightPlugin extends Plugin {
 
 	// Holds the most recent parse result; consumed by LectureLightView
 	lastParseResult: ParseResult | null = null;
+	lastSourceFilePath: string | null = null;
+	lastSourceFileBasename: string | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -99,6 +101,8 @@ export default class LectureLightPlugin extends Plugin {
 			const resolved = resolveWikilinks(content, this.app);
 			const result = parseMarkdownToSlides(resolved);
 			this.lastParseResult = result;
+			this.lastSourceFilePath = activeView.file.path;
+			this.lastSourceFileBasename = activeView.file.basename;
 			console.debug(
 				`[LectureLight] Parsed "${activeView.file.basename}":`,
 				`${result.slides.length} slide(s),`,

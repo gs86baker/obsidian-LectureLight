@@ -54,6 +54,8 @@ export class LectureLightView extends ItemView {
 					parseResult={this.plugin.lastParseResult}
 					settings={this.plugin.settings}
 					app={this.app}
+					sourceFilePath={this.plugin.lastSourceFilePath}
+					sourceFileBasename={this.plugin.lastSourceFileBasename}
 				/>
 			</StrictMode>
 		);
