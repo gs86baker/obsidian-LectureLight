@@ -201,6 +201,8 @@ export const PRESENTER_CSS = `
 	flex-direction: column !important;
 	align-items: flex-start !important;
 	width: 100% !important;
+	min-width: 0 !important;
+	overflow: hidden !important;
 	text-align: left !important;
 	background: #0f2033 !important;
 	border: 1px solid #2d4a6b !important;
@@ -251,6 +253,8 @@ export const PRESENTER_CSS = `
 
 .ll-presenter-root .ll-slide-trigger-snippet {
 	display: block !important;
+	width: 100% !important;
+	min-width: 0 !important;
 	font-size: 11px !important;
 	font-family: var(--font-monospace, monospace) !important;
 	color: #4a7a9b !important;
@@ -307,11 +311,41 @@ export const PRESENTER_CSS = `
 	height: 333% !important;
 	transform: scale(0.3) !important;
 	transform-origin: top left !important;
-	padding: 20px !important;
+	/* Proportional to stage (inner ~786 × 443, scale 0.41):
+	   stage padding 80px/96px × 0.41 ≈ 33px/40px; stage font 40px × 0.41 ≈ 16px */
+	padding: 33px 40px !important;
 	color: #f1f5f9 !important;
 	pointer-events: none !important;
-	font-size: 18px !important;
+	font-size: 16px !important;
 	line-height: 1.5 !important;
+	overflow: hidden !important;
+}
+
+.ll-presenter-root .ll-slide-html h1 {
+	font-size: 39px !important; font-weight: 900 !important;
+	line-height: 1.1 !important; margin: 0 0 13px !important; color: #f8fafc !important;
+}
+.ll-presenter-root .ll-slide-html h2 {
+	font-size: 29px !important; font-weight: 800 !important;
+	line-height: 1.15 !important; margin: 0 0 10px !important; color: #e2e8f0 !important;
+}
+.ll-presenter-root .ll-slide-html h3 {
+	font-size: 23px !important; font-weight: 700 !important;
+	margin: 0 0 8px !important; color: #cbd5e1 !important;
+}
+.ll-presenter-root .ll-slide-html p  { margin: 0 0 10px !important; }
+.ll-presenter-root .ll-slide-html ul,
+.ll-presenter-root .ll-slide-html ol { padding-left: 26px !important; margin: 0 0 10px !important; }
+.ll-presenter-root .ll-slide-html li { margin-bottom: 5px !important; }
+.ll-presenter-root .ll-slide-html strong { font-weight: 800 !important; }
+.ll-presenter-root .ll-slide-html img { max-width: 100% !important; border-radius: 5px !important; }
+
+.ll-presenter-root .ll-slide-html.ll-layout-standard img {
+	max-width: 80% !important; display: block !important; margin: 0 auto !important;
+}
+.ll-presenter-root .ll-slide-html.ll-layout-bleed img {
+	width: 100% !important; max-width: 100% !important; display: block !important;
+	margin: 0 !important; border-radius: 0 !important;
 }
 
 .ll-presenter-root .ll-slide-label {
@@ -348,8 +382,10 @@ export const PRESENTER_CSS = `
 }
 
 @keyframes ll-urgent-pulse {
-	0%, 100% { background: #dc3444; }
-	50%       { background: #fc7e14; }
+	/* background: !important on the element blocks background animation.
+	   Animate filter instead — no specificity conflict, visible red ↔ bright pulse. */
+	0%, 100% { filter: brightness(1); }
+	50%       { filter: brightness(1.7); }
 }
 
 .ll-presenter-root .ll-timer-label {
@@ -438,10 +474,41 @@ export const PRESENTER_CSS = `
 	height: 400% !important;
 	transform: scale(0.25) !important;
 	transform-origin: top left !important;
-	padding: 10px !important;
+	/* Proportional to stage (1920 × 1080 → inner 432 × 243, scale 0.225):
+	   stage padding 80px/96px × 0.225; stage font 40px × 0.225 = 9px */
+	padding: 18px 22px !important;
 	color: #f1f5f9 !important;
 	pointer-events: none !important;
-	font-size: 14px !important;
+	font-size: 9px !important;
+	line-height: 1.5 !important;
+	overflow: hidden !important;
+}
+
+.ll-presenter-root .ll-filmstrip-thumb-inner h1 {
+	font-size: 22px !important; font-weight: 900 !important;
+	line-height: 1.1 !important; margin: 0 0 7px !important; color: #f8fafc !important;
+}
+.ll-presenter-root .ll-filmstrip-thumb-inner h2 {
+	font-size: 16px !important; font-weight: 800 !important;
+	line-height: 1.15 !important; margin: 0 0 5px !important; color: #e2e8f0 !important;
+}
+.ll-presenter-root .ll-filmstrip-thumb-inner h3 {
+	font-size: 13px !important; font-weight: 700 !important;
+	margin: 0 0 4px !important; color: #cbd5e1 !important;
+}
+.ll-presenter-root .ll-filmstrip-thumb-inner p  { margin: 0 0 5px !important; }
+.ll-presenter-root .ll-filmstrip-thumb-inner ul,
+.ll-presenter-root .ll-filmstrip-thumb-inner ol { padding-left: 14px !important; margin: 0 0 5px !important; }
+.ll-presenter-root .ll-filmstrip-thumb-inner li { margin-bottom: 2px !important; }
+.ll-presenter-root .ll-filmstrip-thumb-inner strong { font-weight: 800 !important; }
+.ll-presenter-root .ll-filmstrip-thumb-inner img { max-width: 100% !important; border-radius: 3px !important; }
+
+.ll-presenter-root .ll-filmstrip-thumb-inner.ll-layout-standard img {
+	max-width: 80% !important; display: block !important; margin: 0 auto !important;
+}
+.ll-presenter-root .ll-filmstrip-thumb-inner.ll-layout-bleed img {
+	width: 100% !important; max-width: 100% !important; display: block !important;
+	margin: 0 !important; border-radius: 0 !important;
 }
 
 .ll-presenter-root .ll-filmstrip-label {

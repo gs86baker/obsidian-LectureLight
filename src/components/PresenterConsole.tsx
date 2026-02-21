@@ -104,6 +104,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 			index:       currentSlideIndex,
 			total:       slides.length,
 			label:       currentSlide.label,
+			layout:      currentSlide.layout,
 		});
 	}, [currentSlideIndex, currentSlide, slides.length, app]);
 
@@ -227,6 +228,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 				index:       currentSlideIndex,
 				total:       slides.length,
 				label:       currentSlide.label,
+				layout:      currentSlide.layout,
 			});
 			channelRef.current.postMessage({ type: 'theme-change', light: stageLightTheme });
 		}, 800);
@@ -354,7 +356,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 						<div className="ll-section-label">Stage preview</div>
 						<div className="ll-slide-canvas">
 							<div
-								className="ll-slide-html"
+								className={`ll-slide-html ll-layout-${currentSlide?.layout ?? 'standard'}`}
 								dangerouslySetInnerHTML={{ __html: currentSlide?.htmlContent ?? '' }}
 							/>
 						</div>

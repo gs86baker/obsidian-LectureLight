@@ -24,9 +24,9 @@ export interface UseAudioRecorderReturn {
 }
 
 const PREFERRED_MIME_TYPES = [
-	'audio/webm;codecs=opus',
+	'audio/mp4',              // preferred: works on Windows/macOS; MP4 container includes correct duration metadata
+	'audio/webm;codecs=opus', // Linux / fallback: Opus codec in WebM
 	'audio/webm',
-	'audio/mp4',
 	'audio/ogg;codecs=opus',
 ];
 
@@ -67,16 +67,26 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 		stopLevelMeter();
 		const ctx      = new AudioContext();
 		const analyser = ctx.createAnalyser();
-		analyser.fftSize = 256;
+		// Time-domain waveform data gives accurate RMS amplitude for a level meter.
+		// fftSize controls the sample window; larger = smoother but slightly more lag.
+		analyser.fftSize = 2048;
+		analyser.smoothingTimeConstant = 0.25;
 		ctx.createMediaStreamSource(stream).connect(analyser);
 		audioCtxRef.current = ctx;
 
-		const buf = new Uint8Array(analyser.frequencyBinCount);
+		const buf = new Uint8Array(analyser.fftSize);
 		const tick = () => {
-			analyser.getByteFrequencyData(buf);
+			// getByteTimeDomainData returns 0–255 where 128 = silence.
+			// Subtract 128 to centre around zero, then normalise to −1…1.
+			analyser.getByteTimeDomainData(buf);
 			let sum = 0;
-			for (let i = 0; i < buf.length; i++) sum += ((buf[i] ?? 0) / 255) ** 2;
-			setLevel(Math.sqrt(sum / buf.length));
+			for (let i = 0; i < buf.length; i++) {
+				const v = ((buf[i] ?? 128) - 128) / 128;
+				sum += v * v;
+			}
+			const rms = Math.sqrt(sum / buf.length);
+			// Speech typically produces RMS 0.02–0.2; multiply so the bar fills visibly.
+			setLevel(Math.min(rms * 6, 1));
 			rafRef.current = requestAnimationFrame(tick);
 		};
 		rafRef.current = requestAnimationFrame(tick);

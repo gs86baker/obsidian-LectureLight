@@ -33,6 +33,37 @@ async function ensureFolder(app: App, folderPath: string): Promise<void> {
 	}
 }
 
+/**
+ * Patch the Duration field in a MediaRecorder WebM blob.
+ * MediaRecorder often writes Duration = 0, which prevents the audio
+ * element's scrubber from working correctly.  This scans for the EBML
+ * Duration element (ID 0x4489) and overwrites it with the real value.
+ * Chrome's default timescale is 1 000 000 ns/tick → duration in milliseconds.
+ */
+async function fixWebmDuration(blob: Blob, durationMs: number): Promise<Blob> {
+	if (!blob.type.startsWith('audio/webm') || durationMs <= 0) return blob;
+	try {
+		const buf  = await blob.arrayBuffer();
+		const u8   = new Uint8Array(buf);
+		const view = new DataView(buf);
+		for (let i = 0; i < u8.length - 11; i++) {
+			if (u8[i] === 0x44 && u8[i + 1] === 0x89) {
+				if (u8[i + 2] === 0x88) {             // size = 8 → float64
+					view.setFloat64(i + 3, durationMs, false);
+					return new Blob([buf], { type: blob.type });
+				}
+				if (u8[i + 2] === 0x84) {             // size = 4 → float32
+					view.setFloat32(i + 3, durationMs, false);
+					return new Blob([buf], { type: blob.type });
+				}
+			}
+		}
+	} catch {
+		// If anything goes wrong, return the original blob unchanged.
+	}
+	return blob;
+}
+
 export interface SaveResult {
 	audioPath: string;
 	jsonPath:  string;
@@ -41,6 +72,7 @@ export interface SaveResult {
 /**
  * Write the audio Blob and session JSON into the vault.
  * Creates the recordings folder if it does not already exist.
+ * Patches WebM duration metadata so Obsidian's audio player scrubber works correctly.
  * Returns the vault-relative paths of both saved files.
  */
 export async function saveRecording(
@@ -60,7 +92,11 @@ export async function saveRecording(
 	const audioPath = normalizePath(`${folder}/${safeName}-${stamp}.${ext}`);
 	const jsonPath  = normalizePath(`${folder}/${safeName}-${stamp}.session.json`);
 
-	const buf = await blob.arrayBuffer();
+	// Fix WebM duration before saving so the HTML audio element's scrubber reflects real time.
+	const durationMs  = (sessionLog.summary?.totalDurationSeconds ?? 0) * 1000;
+	const patchedBlob = await fixWebmDuration(blob, durationMs);
+
+	const buf = await patchedBlob.arrayBuffer();
 	await app.vault.createBinary(audioPath, buf);
 	await app.vault.create(jsonPath, JSON.stringify(sessionLog, null, 2));
 
@@ -68,8 +104,9 @@ export async function saveRecording(
 }
 
 /**
- * Atomically append a "LectureLight session" section to the currently active note,
- * containing Obsidian links to the saved audio and session JSON.
+ * Atomically append a "LectureLight session" section to the currently active note.
+ * The audio embed uses ![[...]] so Obsidian renders an inline player.
+ * The session log uses [[...]] as a plain link.
  */
 export async function appendSessionLinks(
 	app:       App,
@@ -83,10 +120,11 @@ export async function appendSessionLinks(
 	const date = new Date(startTime).toLocaleDateString('en-US', {
 		year: 'numeric', month: 'long', day: 'numeric',
 	});
+	// Plain embeds — no list bullets so Obsidian renders the audio player inline.
 	const section =
 		`\n## LectureLight session — ${date}\n\n` +
-		`- ![[${audioPath}]]\n` +
-		`- [[${jsonPath}]]\n`;
+		`![[${audioPath}]]\n\n` +
+		`[[${jsonPath}]]\n`;
 
 	await app.vault.process(activeFile, (content) => content + section);
 }
