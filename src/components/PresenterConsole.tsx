@@ -435,13 +435,13 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 									aria-label={isSessionActive ? 'Stop session and save recording' : 'Start session and recording'}
 								>
 									<BtnContent
-										icon={
-											isSaving
-												? <BtnIcon><path d="M12 4v4" /><path d="M12 16v4" /><path d="M4 12h4" /><path d="M16 12h4" /></BtnIcon>
-												: isSessionActive
-													? <BtnIcon><rect x="7" y="7" width="10" height="10" rx="1" /></BtnIcon>
-													: <BtnIcon><polygon points="9,7 18,12 9,17" /></BtnIcon>
-										}
+											icon={
+												isSaving
+													? <BtnIcon><path d="M12 4v4" /><path d="M12 16v4" /><path d="M4 12h4" /><path d="M16 12h4" /></BtnIcon>
+													: isSessionActive
+														? <BtnIcon><rect x="7" y="7" width="10" height="10" rx="1" /></BtnIcon>
+														: <BtnIcon><polygon points="8,5 19,12 8,19" /></BtnIcon>
+											}
 										label={isSaving ? 'Saving…' : isSessionActive ? 'Stop' : 'Start'}
 									/>
 								</button>
@@ -488,7 +488,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 								)}
 
 								<button
-									className={`ll-btn ll-btn-record${isTesting ? ' ll-btn-mic-active' : ''}`}
+									className={`ll-btn ll-btn-record ll-btn-test-mic${isTesting ? ' ll-btn-mic-active' : ''}`}
 									onClick={() => { void testMic(); }}
 									disabled={!isMicEnabled || isSessionActive || isSaving}
 									aria-label="Test microphone"
@@ -554,7 +554,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 							</div>
 
 							<button
-								className={`ll-btn ll-btn-record${isFilmStripVisible ? ' ll-btn-active' : ''}`}
+								className={`ll-btn ll-btn-record ll-btn-filmstrip${isFilmStripVisible ? ' ll-btn-active' : ''}`}
 								onClick={() => setIsFilmStripVisible(v => !v)}
 								aria-label="Toggle film strip"
 							>

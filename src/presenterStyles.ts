@@ -157,6 +157,10 @@ export const PRESENTER_CSS = `
 	min-width: 100px !important;
 }
 
+.ll-presenter-root .ll-btn-nav .ll-btn-content {
+	transform: translateX(5px) !important;
+}
+
 .ll-presenter-root .ll-btn-start {
 	background: #166534 !important;
 	border-color: #34d399 !important;
@@ -196,20 +200,22 @@ export const PRESENTER_CSS = `
 }
 
 .ll-presenter-root .ll-btn-content {
-	display: grid !important;
+	display: flex !important;
 	width: 100% !important;
+	min-width: 0 !important;
 	align-items: center !important;
-	grid-template-columns: 16px auto 16px !important;
 	justify-content: center !important;
 	gap: 8px !important;
 	line-height: 1 !important;
+	margin: 0 auto !important;
 }
 
 .ll-presenter-root .ll-btn-content::after {
 	content: "" !important;
+	display: block !important;
 	width: 16px !important;
 	height: 16px !important;
-	grid-column: 3 !important;
+	flex: 0 0 16px !important;
 }
 
 .ll-presenter-root .ll-btn-icon {
@@ -219,7 +225,12 @@ export const PRESENTER_CSS = `
 	width: 16px !important;
 	height: 16px !important;
 	flex: 0 0 16px !important;
-	grid-column: 1 !important;
+	position: relative !important;
+	top: -1px !important;
+}
+
+.ll-presenter-root .ll-btn-content > .ll-btn-icon {
+	left: 1px !important;
 }
 
 .ll-presenter-root .ll-btn-icon-svg {
@@ -231,14 +242,14 @@ export const PRESENTER_CSS = `
 }
 
 .ll-presenter-root .ll-btn-text {
-	display: inline-block !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
 	font-size: 12px !important;
 	font-weight: 700 !important;
 	letter-spacing: 0.01em !important;
 	line-height: 1 !important;
 	text-align: center !important;
-	grid-column: 2 !important;
-	justify-self: center !important;
 }
 
 .ll-presenter-root .ll-btn-record {
@@ -266,6 +277,22 @@ export const PRESENTER_CSS = `
 
 .ll-presenter-root .ll-session-start {
 	flex: 1 1 auto !important;
+}
+
+.ll-presenter-root .ll-session-start .ll-btn-content {
+	transform: translateX(10px) !important;
+}
+
+.ll-presenter-root .ll-session-reset .ll-btn-content {
+	transform: translateX(10px) !important;
+}
+
+.ll-presenter-root .ll-btn-filmstrip .ll-btn-content {
+	transform: translateX(10px) !important;
+}
+
+.ll-presenter-root .ll-btn-test-mic .ll-btn-content {
+	transform: translateX(3px) !important;
 }
 
 .ll-presenter-root .ll-session-reset {
@@ -511,6 +538,10 @@ export const PRESENTER_CSS = `
 	flex: 1 1 auto !important;
 }
 
+.ll-presenter-root .ll-btn-preview-stage .ll-btn-content {
+	transform: translateX(17px) !important;
+}
+
 .ll-presenter-root .ll-btn-preview-theme {
 	flex: 0 0 auto !important;
 }
@@ -570,7 +601,7 @@ export const PRESENTER_CSS = `
 }
 
 .ll-presenter-root .ll-timer-label {
-	font-size: 11px !important;
+	font-size: 19px !important;
 	font-weight: 700 !important;
 	color: rgba(255, 255, 255, 0.85) !important;
 	margin-top: 3px !important;
@@ -610,7 +641,7 @@ export const PRESENTER_CSS = `
 }
 
 .ll-presenter-root .ll-timer-display {
-	font-size: 65px !important;
+	font-size: 73px !important;
 	font-weight: 900 !important;
 	font-family: var(--font-interface, system-ui, sans-serif) !important;
 	font-variant-numeric: tabular-nums !important;
@@ -620,7 +651,7 @@ export const PRESENTER_CSS = `
 }
 
 .ll-presenter-root .ll-timer-target {
-	font-size: 9px !important;
+	font-size: 11px !important;
 	font-weight: 600 !important;
 	color: rgba(255, 255, 255, 0.4) !important;
 	margin-top: 2px !important;
@@ -893,6 +924,11 @@ export const PRESENTER_CSS = `
 	font-size: 12px !important;
 	font-weight: 700 !important;
 	color: #f8fafc !important;
+}
+
+.ll-presenter-root .ll-recording-card-title .ll-btn-icon-svg {
+	position: relative !important;
+	top: -3px !important;
 }
 
 .ll-presenter-root .ll-recording-enable {
