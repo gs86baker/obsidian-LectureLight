@@ -216,7 +216,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 			return;
 		}
 
-		const leaf = app.workspace.openPopoutLeaf({ size: { width: 1280, height: 720 } });
+		const leaf = app.workspace.openPopoutLeaf({ size: { width: 1920, height: 1080 } });
 		await leaf.setViewState({ type: VIEW_TYPE_STAGE, active: true });
 		setIsStageOpen(true);
 
