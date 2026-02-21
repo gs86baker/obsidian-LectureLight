@@ -37,9 +37,17 @@ interface PresenterConsoleProps {
 	parseResult: ParseResult | null;
 	settings:    LectureLightSettings;
 	app:         App;
+	sourceFilePath: string | null;
+	sourceFileBasename: string | null;
 }
 
-export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult, settings, app }) => {
+export const PresenterConsole: React.FC<PresenterConsoleProps> = ({
+	parseResult,
+	settings,
+	app,
+	sourceFilePath,
+	sourceFileBasename,
+}) => {
 	const [currentSlideIndex,    setCurrentSlideIndex]    = useState(0);
 	const [elapsedSeconds,       setElapsedSeconds]       = useState(0);
 	const [isSessionActive,      setIsSessionActive]      = useState(false);
@@ -48,8 +56,14 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 	const [isStageOpen,          setIsStageOpen]          = useState(false);
 	const [stageLightTheme,      setStageLightTheme]      = useState(false);
 	const [isSaving,             setIsSaving]             = useState(false);
+	const [isSessionTransitioning, setIsSessionTransitioning] = useState(false);
 	const [isMicEnabled,         setIsMicEnabled]         = useState(true);
 	const [sessionHasAudio,      setSessionHasAudio]      = useState(false);
+	const sessionToggleLockRef = useRef(false);
+	const sessionNoteRef = useRef<{ path: string | null; title: string }>({
+		path: null,
+		title: 'untitled',
+	});
 
 	const channelRef = useRef<BroadcastChannel | null>(null);
 
@@ -195,44 +209,71 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 	// ── Session start / stop ───────────────────────────────────────────────────
 
 	const handleSessionToggle = useCallback(async () => {
-		if (isSessionActive) {
-			// Stop: halt timer immediately, then collect recording and save.
-			setIsSessionActive(false);
-			const sessionLog = logger.stopSession();
-			const blob = sessionHasAudio ? await stopRecording() : null;
-			setSessionHasAudio(false);
+		if (sessionToggleLockRef.current) return;
+		sessionToggleLockRef.current = true;
+		setIsSessionTransitioning(true);
 
-			if (blob && sessionLog) {
-				setIsSaving(true);
-				try {
-					const noteTitle = app.workspace.getActiveFile()?.basename ?? 'untitled';
-					const { audioPath, jsonPath } = await saveRecording(
-						app, blob, sessionLog, noteTitle, mimeType, settings.recordingFolder,
-					);
-					await appendSessionLinks(app, audioPath, jsonPath, sessionLog.startTime);
-					new Notice('Recording saved to vault.');
-				} catch (e) {
-					new Notice('Failed to save recording — check the developer console for details.');
-					console.error('[LectureLight] Save failed:', e);
-				} finally {
-					setIsSaving(false);
-				}
-			}
-		} else {
-			if (!timerValidation.isValid) return;
-			// Start: initialise logger, request mic, begin recording.
-			logger.startSession(crypto.randomUUID(), timerSettings);
-			if (currentSlide) {
-				logger.trackSlideChange(currentSlideIndex, currentSlide.label);
-			}
-			if (isMicEnabled) {
-				await startRecording();
-				setSessionHasAudio(true);
-			} else {
+		try {
+			if (isSessionActive) {
+				// Stop: halt timer immediately, then collect recording and save.
+				setIsSessionActive(false);
+				const sessionLog = logger.stopSession();
+				const blob = sessionHasAudio ? await stopRecording() : null;
 				setSessionHasAudio(false);
+
+				if (blob && sessionLog) {
+					setIsSaving(true);
+					try {
+						const noteTitle = sessionNoteRef.current.title;
+						const { audioPath, jsonPath } = await saveRecording(
+							app, blob, sessionLog, noteTitle, mimeType, settings.recordingFolder,
+						);
+						const appended = await appendSessionLinks(
+							app,
+							audioPath,
+							jsonPath,
+							sessionLog.startTime,
+							sessionNoteRef.current.path,
+						);
+						if (!appended) {
+							new Notice('Recording saved, but could not append links to the source note.');
+						} else {
+							new Notice('Recording saved to vault.');
+						}
+					} catch (e) {
+						new Notice('Failed to save recording — check the developer console for details.');
+						console.error('[LectureLight] Save failed:', e);
+					} finally {
+						setIsSaving(false);
+					}
+				}
+			} else {
+				if (!timerValidation.isValid) return;
+				const activeFile = app.workspace.getActiveFile();
+				sessionNoteRef.current = {
+					path: sourceFilePath ?? activeFile?.path ?? null,
+					title: sourceFileBasename ?? activeFile?.basename ?? 'untitled',
+				};
+				// Start: initialise logger, request mic, begin recording.
+				logger.startSession(crypto.randomUUID(), timerSettings);
+				if (currentSlide) {
+					logger.trackSlideChange(currentSlideIndex, currentSlide.label);
+				}
+				if (isMicEnabled) {
+					const recordingStarted = await startRecording();
+					setSessionHasAudio(recordingStarted);
+					if (!recordingStarted) {
+						new Notice('Session started, but microphone recording could not start.');
+					}
+				} else {
+					setSessionHasAudio(false);
+				}
+				// Start the session even if mic permission was denied (timer still runs).
+				setIsSessionActive(true);
 			}
-			// Start the session even if mic permission was denied (timer still runs).
-			setIsSessionActive(true);
+		} finally {
+			sessionToggleLockRef.current = false;
+			setIsSessionTransitioning(false);
 		}
 	}, [
 		isSessionActive,
@@ -243,6 +284,8 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 		timerValidation.isValid,
 		mimeType,
 		isMicEnabled,
+		sourceFilePath,
+		sourceFileBasename,
 		app,
 		settings.recordingFolder,
 		startRecording,
@@ -420,35 +463,35 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 						</div>
 					</div>
 
-						<TrafficLightTimer
-							elapsedSeconds={elapsedSeconds}
-							isActive={isSessionActive}
-							settings={timerSettings}
-							errorMessage={timerValidation.message}
-							showTimePlaceholder={showTimerPlaceholder}
-						>
+					<TrafficLightTimer
+						elapsedSeconds={elapsedSeconds}
+						isActive={isSessionActive}
+						settings={timerSettings}
+						errorMessage={timerValidation.message}
+						showTimePlaceholder={showTimerPlaceholder}
+					>
 							<div className="ll-session-controls">
 								<button
 									className={`ll-btn ll-btn-record ll-session-start ${isSessionActive ? 'll-btn-stop' : 'll-btn-start'}`}
 									onClick={() => { void handleSessionToggle(); }}
-									disabled={isSaving || (!isSessionActive && !timerValidation.isValid)}
+									disabled={isSessionTransitioning || isSaving || (!isSessionActive && !timerValidation.isValid)}
 									aria-label={isSessionActive ? 'Stop session and save recording' : 'Start session and recording'}
 								>
 									<BtnContent
-											icon={
-												isSaving
-													? <BtnIcon><path d="M12 4v4" /><path d="M12 16v4" /><path d="M4 12h4" /><path d="M16 12h4" /></BtnIcon>
-													: isSessionActive
-														? <BtnIcon><rect x="7" y="7" width="10" height="10" rx="1" /></BtnIcon>
-														: <BtnIcon><polygon points="8,5 19,12 8,19" /></BtnIcon>
-											}
+										icon={
+											isSaving
+												? <BtnIcon><path d="M12 4v4" /><path d="M12 16v4" /><path d="M4 12h4" /><path d="M16 12h4" /></BtnIcon>
+												: isSessionActive
+													? <BtnIcon><rect x="7" y="7" width="10" height="10" rx="1" /></BtnIcon>
+													: <BtnIcon><polygon points="8,5 19,12 8,19" /></BtnIcon>
+										}
 										label={isSaving ? 'Saving…' : isSessionActive ? 'Stop' : 'Start'}
 									/>
 								</button>
 								<button
 									className="ll-btn ll-session-reset"
 									onClick={() => setElapsedSeconds(0)}
-									disabled={isSaving}
+									disabled={isSaving || isSessionTransitioning}
 									aria-label="Reset timer"
 								>
 									<BtnContent
@@ -474,7 +517,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 											type="checkbox"
 											checked={isMicEnabled}
 											onChange={(e) => setIsMicEnabled(e.target.checked)}
-											disabled={isSessionActive || isSaving}
+											disabled={isSessionActive || isSaving || isSessionTransitioning}
 										/>
 										<span>Enable</span>
 									</label>
@@ -490,7 +533,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({ parseResult,
 								<button
 									className={`ll-btn ll-btn-record ll-btn-test-mic${isTesting ? ' ll-btn-mic-active' : ''}`}
 									onClick={() => { void testMic(); }}
-									disabled={!isMicEnabled || isSessionActive || isSaving}
+									disabled={!isMicEnabled || isSessionActive || isSaving || isSessionTransitioning}
 									aria-label="Test microphone"
 								>
 									<BtnContent
