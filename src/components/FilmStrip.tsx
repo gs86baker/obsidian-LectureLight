@@ -26,7 +26,7 @@ export const FilmStrip: React.FC<FilmStripProps> = ({ slides, currentSlideIndex,
 				>
 					<div className="ll-filmstrip-thumb">
 						<div
-							className="ll-filmstrip-thumb-inner"
+							className={`ll-filmstrip-thumb-inner ll-layout-${slide.layout}`}
 							dangerouslySetInnerHTML={{ __html: slide.htmlContent }}
 						/>
 					</div>

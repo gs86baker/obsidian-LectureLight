@@ -88,7 +88,19 @@ const STAGE_STYLES = `
     overflow: hidden;
   }
   .ls-content pre code { background: none; padding: 0; border-radius: 0; font-size: 36px; line-height: 1.5; }
-  .ls-content img { max-width: 100%; max-height: 800px; image-rendering: high-quality; border-radius: 12px; }
+  .ls-content img { max-width: 80%; max-height: 800px; image-rendering: high-quality; border-radius: 12px; display: block; margin: 24px auto; }
+
+  /* Bleed layout — images fill the slide edge-to-edge; text retains side padding */
+  .ls-content.ls-layout-bleed { padding-left: 0; padding-right: 0; }
+  .ls-content.ls-layout-bleed img {
+    width: 100%; max-width: 100%; max-height: none; display: block; margin: 0; border-radius: 0;
+  }
+  .ls-content.ls-layout-bleed h1,
+  .ls-content.ls-layout-bleed h2,
+  .ls-content.ls-layout-bleed h3,
+  .ls-content.ls-layout-bleed p,
+  .ls-content.ls-layout-bleed ul,
+  .ls-content.ls-layout-bleed ol { padding-left: 96px; padding-right: 96px; }
 
   /* ── Light theme ── */
 
@@ -203,12 +215,13 @@ export class LectureLightStageView extends ItemView {
 		this.channel = ch;
 
 		ch.addEventListener('message', (e: MessageEvent) => {
-			const msg = e.data as { type: string; htmlContent?: string; light?: boolean };
+			const msg = e.data as { type: string; htmlContent?: string; light?: boolean; layout?: string };
 			if (msg.type === 'slide-change') {
 				waiting.addClass('ls-hidden');
 				content.addClass('ls-visible');
 				// eslint-disable-next-line @microsoft/sdl/no-inner-html
 				content.innerHTML = DOMPurify.sanitize(msg.htmlContent ?? '');
+				content.toggleClass('ls-layout-bleed', msg.layout === 'bleed');
 			} else if (msg.type === 'theme-change') {
 				canvas.toggleClass('ls-light', msg.light ?? false);
 			}
