@@ -35,6 +35,12 @@ function detectMimeType(): string {
 	return PREFERRED_MIME_TYPES.find(t => MediaRecorder.isTypeSupported(t)) ?? '';
 }
 
+const METER_ATTACK = 0.55;
+const METER_RELEASE = 0.12;
+const METER_NOISE_FLOOR = 0.003;
+const METER_GAIN = 2.5;
+const METER_CURVE = 2.8;
+
 export function useAudioRecorder(): UseAudioRecorderReturn {
 	const [status, setStatus] = useState<RecorderStatus>('idle');
 	const [error, setError]   = useState<string | null>(null);
@@ -48,6 +54,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 	const chunksRef   = useRef<Blob[]>([]);
 	const audioCtxRef = useRef<AudioContext | null>(null);
 	const rafRef      = useRef<number>(0);
+	const meterLevelRef = useRef(0);
 
 	// ── Level meter ────────────────────────────────────────────────────────────
 
@@ -60,33 +67,47 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 			void audioCtxRef.current.close();
 			audioCtxRef.current = null;
 		}
+		meterLevelRef.current = 0;
 		setLevel(0);
 	}, []);
 
 	const startLevelMeter = useCallback((stream: MediaStream) => {
 		stopLevelMeter();
-		const ctx      = new AudioContext();
+		const ctx      = new AudioContext({ latencyHint: 'interactive' });
 		const analyser = ctx.createAnalyser();
 		// Time-domain waveform data gives accurate RMS amplitude for a level meter.
 		// fftSize controls the sample window; larger = smoother but slightly more lag.
-		analyser.fftSize = 2048;
-		analyser.smoothingTimeConstant = 0.25;
+		analyser.fftSize = 1024;
+		analyser.smoothingTimeConstant = 0;
 		ctx.createMediaStreamSource(stream).connect(analyser);
+		void ctx.resume();
 		audioCtxRef.current = ctx;
 
-		const buf = new Uint8Array(analyser.fftSize);
+		const buf = new Float32Array(analyser.fftSize);
+		meterLevelRef.current = 0;
 		const tick = () => {
-			// getByteTimeDomainData returns 0–255 where 128 = silence.
-			// Subtract 128 to centre around zero, then normalise to −1…1.
-			analyser.getByteTimeDomainData(buf);
+			analyser.getFloatTimeDomainData(buf);
 			let sum = 0;
+			let peak = 0;
 			for (let i = 0; i < buf.length; i++) {
-				const v = ((buf[i] ?? 128) - 128) / 128;
+				const v = buf[i] ?? 0;
 				sum += v * v;
+				const abs = Math.abs(v);
+				if (abs > peak) peak = abs;
 			}
 			const rms = Math.sqrt(sum / buf.length);
-			// Speech typically produces RMS 0.02–0.2; multiply so the bar fills visibly.
-			setLevel(Math.min(rms * 6, 1));
+
+			// Blend RMS and peak so regular speech is visible while preserving transients.
+			const gatedRms = Math.max(0, rms - METER_NOISE_FLOOR);
+			const gatedPeak = Math.max(0, peak - METER_NOISE_FLOOR);
+			const signal = Math.max(gatedRms * METER_GAIN, gatedPeak * (METER_GAIN * 0.7));
+			const target = Math.min(1, 1 - Math.exp(-signal * METER_CURVE));
+			const current = meterLevelRef.current;
+			const alpha = target >= current ? METER_ATTACK : METER_RELEASE;
+			const next = current + (target - current) * alpha;
+
+			meterLevelRef.current = next;
+			setLevel(next);
 			rafRef.current = requestAnimationFrame(tick);
 		};
 		rafRef.current = requestAnimationFrame(tick);
@@ -158,7 +179,9 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 			if (e.data.size > 0) chunksRef.current.push(e.data);
 		};
 
-		recorder.start(1000); // collect a chunk every second
+		// Start without a timeslice so the recorder can finalize container metadata
+		// (especially duration) in one stream at stop.
+		recorder.start();
 		startLevelMeter(stream);
 		setStatus('recording');
 		setError(null);
