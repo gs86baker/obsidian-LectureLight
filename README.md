@@ -67,6 +67,23 @@ A dedicated side panel with everything you need to run a talk:
 | `→` / `Page Down` | Next slide |
 | `←` to slide 1 (timer running) | Resets elapsed time to zero |
 
+### Microphone permission
+
+The recording feature requires microphone access. Obsidian will prompt for permission the first time you click **Start** or **Test mic**. If you deny access, click the permission icon in your browser/OS menu bar to re-allow it, then click **Test mic** again.
+
+### Session recording
+
+Start a session with **Start** to record your microphone alongside the presentation. When you click **Stop**, the plugin:
+
+1. Assembles the audio into a single file (WebM/Opus preferred, MP4 fallback).
+2. Writes a `.session.json` sidecar containing every slide-change event with wall-clock timestamps and elapsed time.
+3. Saves both files to `LectureLight/Recordings/` inside your vault (configurable in **Settings → LectureLight Pro**).
+4. Appends a `## LectureLight session — {date}` section to the active note with Obsidian links to both files so you can play back the audio and open the log without leaving the vault.
+
+Use **Test mic** to check your microphone level (shown as a live bar in the recording panel) without starting a session. The mic is released automatically when the test ends or the pane is closed.
+
+If microphone permission is denied, a clear error message is shown in the recording panel and the session timer continues without audio.
+
 ### Traffic-light timer
 
 Counts down from your target time. Color changes signal how you're tracking:
@@ -124,7 +141,7 @@ The **☀** button in the presenter console header switches the stage between da
 npm install
 npm run dev      # watch mode (rebuilds on save)
 npm run build    # production build
-npm test         # 49 Vitest unit tests
+npm test         # 49 Vitest unit tests (parser + wikilinks)
 npm run lint     # ESLint (0 errors expected)
 ```
 
@@ -143,12 +160,16 @@ src/
   settings.ts                  # Settings interface, defaults, settings tab
   types.ts                     # ParseResult, Slide, TimerSettings
   components/
-    PresenterConsole.tsx        # Root console component — layout, state, stage control
+    PresenterConsole.tsx        # Root console component — layout, state, stage/recording control
     TrafficLightTimer.tsx       # Countdown timer with color states
     FilmStrip.tsx               # Thumbnail row
     Teleprompter.tsx            # Scrollable script with slide triggers and speaker notes
+  hooks/
+    useAudioRecorder.ts         # MediaRecorder + Web Audio level meter hook
   lib/
     parser.ts                   # :::slide / :::lecturelight / :::notes block parser
+    logger.ts                   # Session event log (slide timestamps, start/stop events)
+    vaultSave.ts                # Save audio + session JSON to vault; append note links
     wikilinks.ts                # [[wikilink]] resolver
   __tests__/
     parser.test.ts              # 40 parser unit tests
@@ -168,18 +189,6 @@ All inter-window communication uses `BroadcastChannel('lecturelight-stage')`. No
 ---
 
 ## Roadmap
-
-### Next — Recording features
-
-The next development phase adds **session recording** so a talk can be reviewed, trimmed, and published without leaving Obsidian.
-
-| Item | Description |
-|---|---|
-| **Audio capture** | Record microphone input via the Web Audio API during a session; display a live level meter in the presenter console |
-| **Slide-timestamp log** | Write a JSON sidecar (`.lecturelight.json`) alongside the note that maps each slide index to the wall-clock time it was shown |
-| **Playback console** | A read-only mode that replays the timestamp log against the recorded audio, highlighting the active slide in the teleprompter as it plays |
-| **Export** | Render each slide as a PNG frame (using the existing stage canvas) and mux with the audio into an MP4 via a WASM FFmpeg bundle |
-| **Chapter markers** | Embed slide labels as ID3/MP4 chapter markers in the exported file so video players display a chapter list |
 
 ### Backlog
 
