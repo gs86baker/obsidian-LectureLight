@@ -38,6 +38,11 @@ interface VintResult {
 	value: number;
 }
 
+interface EbmlIdResult {
+	length: number;
+	value: number;
+}
+
 function readVint(u8: Uint8Array, offset: number): VintResult | null {
 	const first = u8[offset];
 	if (first === undefined || first === 0) return null;
@@ -56,6 +61,39 @@ function readVint(u8: Uint8Array, offset: number): VintResult | null {
 		value = (value * 256) + (u8[offset + i] ?? 0);
 	}
 	return { length, value };
+}
+
+function readEbmlId(u8: Uint8Array, offset: number): EbmlIdResult | null {
+	const first = u8[offset];
+	if (first === undefined || first === 0) return null;
+
+	let length = 1;
+	let mask = 0x80;
+	while (length <= 4 && (first & mask) === 0) {
+		mask >>= 1;
+		length++;
+	}
+	if (length > 4) return null;
+	if (offset + length > u8.length) return null;
+
+	let value = 0;
+	for (let i = 0; i < length; i++) {
+		value = (value * 256) + (u8[offset + i] ?? 0);
+	}
+	return { length, value };
+}
+
+function isUnknownSizeVint(u8: Uint8Array, offset: number, length: number): boolean {
+	const first = u8[offset];
+	if (first === undefined || length < 1 || length > 8) return false;
+	let mask = 0x80;
+	for (let i = 1; i < length; i++) mask >>= 1;
+	const payloadMask = mask - 1;
+	if ((first & payloadMask) !== payloadMask) return false;
+	for (let i = 1; i < length; i++) {
+		if (u8[offset + i] !== 0xff) return false;
+	}
+	return true;
 }
 
 function findPattern(u8: Uint8Array, pattern: number[], from = 0, to = u8.length): number {
@@ -81,6 +119,69 @@ function readUnsignedBE(u8: Uint8Array, offset: number, byteLength: number): num
 	return value;
 }
 
+function writeUnsignedBE(u8: Uint8Array, offset: number, byteLength: number, value: number): void {
+	let v = Math.max(0, Math.floor(value));
+	for (let i = byteLength - 1; i >= 0; i--) {
+		u8[offset + i] = v & 0xff;
+		v = Math.floor(v / 256);
+	}
+}
+
+const CLUSTER_ID = [0x1f, 0x43, 0xb6, 0x75];
+const TIMECODE_ID = 0xe7;
+
+function normalizeWebmClusterTimecodes(u8: Uint8Array): void {
+	let cursor = 0;
+	let baseClusterTimecode: number | null = null;
+
+	while (cursor < u8.length) {
+		const clusterStart = findPattern(u8, CLUSTER_ID, cursor);
+		if (clusterStart < 0) break;
+
+		const clusterSizeInfo = readVint(u8, clusterStart + CLUSTER_ID.length);
+		if (!clusterSizeInfo) break;
+		const clusterDataStart = clusterStart + CLUSTER_ID.length + clusterSizeInfo.length;
+		if (clusterDataStart >= u8.length) break;
+
+		const nextCluster = findPattern(u8, CLUSTER_ID, clusterDataStart);
+		const hasUnknownSize = isUnknownSizeVint(u8, clusterStart + CLUSTER_ID.length, clusterSizeInfo.length);
+		const declaredEnd = clusterDataStart + clusterSizeInfo.value;
+		const clusterEnd = (
+			hasUnknownSize || clusterSizeInfo.value <= 0 || declaredEnd > u8.length
+		)
+			? (nextCluster >= 0 ? nextCluster : u8.length)
+			: declaredEnd;
+		if (clusterEnd <= clusterDataStart) {
+			cursor = clusterStart + CLUSTER_ID.length;
+			continue;
+		}
+
+		let pos = clusterDataStart;
+		while (pos < clusterEnd) {
+			const idInfo = readEbmlId(u8, pos);
+			if (!idInfo) break;
+			const sizeInfo = readVint(u8, pos + idInfo.length);
+			if (!sizeInfo) break;
+
+			const dataOffset = pos + idInfo.length + sizeInfo.length;
+			if (dataOffset >= clusterEnd || dataOffset + sizeInfo.value > u8.length) break;
+
+			const elementEnd = Math.min(clusterEnd, dataOffset + sizeInfo.value);
+			if (idInfo.value === TIMECODE_ID && sizeInfo.value > 0 && sizeInfo.value <= 8) {
+				const timecode = readUnsignedBE(u8, dataOffset, sizeInfo.value);
+				if (baseClusterTimecode === null) baseClusterTimecode = timecode;
+				const normalized = Math.max(0, timecode - baseClusterTimecode);
+				writeUnsignedBE(u8, dataOffset, sizeInfo.value, normalized);
+				break;
+			}
+			if (elementEnd <= pos) break;
+			pos = elementEnd;
+		}
+
+		cursor = clusterEnd;
+	}
+}
+
 /**
  * Patch the Duration field in a MediaRecorder WebM blob.
  * MediaRecorder often writes Duration = 0, which prevents the audio
@@ -95,8 +196,13 @@ async function fixWebmDuration(blob: Blob, durationMs: number): Promise<Blob> {
 		const u8   = new Uint8Array(buf);
 		const view = new DataView(buf);
 
+		// Some MediaRecorder WebM files begin with a non-zero cluster timecode, which
+		// can make the seek/progress UI appear partially advanced at 0:00 in Obsidian.
+		// Normalize cluster timecodes so the media timeline starts at zero.
+		normalizeWebmClusterTimecodes(u8);
+
 		// Search metadata only (before first Cluster) to avoid false positives.
-		const firstCluster = findPattern(u8, [0x1f, 0x43, 0xb6, 0x75]);
+		const firstCluster = findPattern(u8, CLUSTER_ID);
 		const searchEnd = firstCluster > 0 ? firstCluster : Math.min(u8.length, 1024 * 1024);
 
 		// TimecodeScale (ID 0x2AD7B1) defaults to 1,000,000 ns if absent.
