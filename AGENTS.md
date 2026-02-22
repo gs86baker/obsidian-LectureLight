@@ -249,3 +249,77 @@ this.registerInterval(window.setInterval(() => { /* ... */ }, 1000));
 - Developer policies: https://docs.obsidian.md/Developer+policies
 - Plugin guidelines: https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines
 - Style guide: https://help.obsidian.md/style-guide
+
+## Session Handoff (Laptop Resume)
+
+### First actions on a new machine
+
+1. Open the repository root and update to the newest code:
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run full verification before testing in Obsidian:
+   ```bash
+   npm run build
+   npm run lint
+   npm test
+   ```
+4. Copy plugin artifacts into the vault plugin folder:
+   - `main.js`
+   - `manifest.json`
+   - `styles.css` (if used)
+5. In Obsidian: reload app/plugins and verify **LectureLight Pro** is enabled.
+
+### Current project state (important)
+
+- Manifest is now desktop-only:
+  - `manifest.json` has `"isDesktopOnly": true`.
+- Stage popout and stage preview/theme synchronization are implemented and working.
+- Presenter sidebar was heavily reworked to align with LectureLight UX:
+  - Stage preview card includes Stage Display + theme toggle.
+  - Speech timer area contains Start/Reset and recording controls.
+  - Film strip toggle lives below recording controls.
+- Timer validation logic is enforced:
+  - Max target is 120 minutes.
+  - Warning cannot exceed target.
+  - Wrap-up cannot exceed warning.
+  - Invalid timer disables Start and shows validation messaging.
+  - Timer display uses placeholder (`---:--`) for over-max target input.
+- Audio recording UX updates implemented:
+  - Enable checkbox can disable recording.
+  - Bar-style meter with improved responsiveness.
+  - During active recording, meter remains visible and `Test mic` is hidden.
+  - Stop button icon is vertically adjusted for visual alignment.
+
+### Recording/save pipeline behavior
+
+- Session start/stop edge cases were hardened:
+  - Start/stop has an in-flight lock to prevent rapid-click race conditions.
+  - Session only marks `sessionHasAudio` true if recording actually starts.
+  - If mic fails to start, session can still run (timer), with user notice.
+- Save/link target is now stable:
+  - Session captures source note path/title at session start.
+  - Recording links are appended back to that source note even if active tab changes.
+- WebM metadata handling:
+  - Duration is patched for Obsidian scrubber compatibility.
+  - Cluster timecodes are normalized to start at zero to prevent progress bar offset at playback start.
+  - This fix applies to newly recorded files; old recordings are not auto-rewritten.
+
+### Known recent issue under validation
+
+- User observed Obsidian playback showing correct duration text but progress bar pre-filled at start.
+- Latest fix normalized WebM cluster timecodes before save.
+- Validate this specifically on laptop with fresh recordings and multiple mic devices.
+
+### Quick manual validation checklist
+
+1. Start session with mic enabled; verify meter and `RECORDING` status replace `Test mic`.
+2. Stop session; verify files are saved and links are appended to the original source note.
+3. Open fresh recording in note embed; verify progress bar starts at 0 and tracks normally.
+4. Test denied mic permission path; verify timer still runs and no phantom audio save occurs.
+5. Test rapid Start/Stop clicks; verify no duplicate/overlapping state transitions.

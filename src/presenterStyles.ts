@@ -186,6 +186,10 @@ export const PRESENTER_CSS = `
 	border-color: #fca5a5 !important;
 }
 
+.ll-presenter-root .ll-session-start.ll-btn-stop .ll-btn-icon {
+	top: 4px !important;
+}
+
 .ll-presenter-root .ll-btn-active {
 	background: #1d4ed8 !important;
 	border-color: #60a5fa !important;

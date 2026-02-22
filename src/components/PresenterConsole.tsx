@@ -339,7 +339,9 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({
 
 	const isRecording  = recorderStatus === 'recording';
 	const isTesting    = recorderStatus === 'testing';
-	const meterVisible = isMicEnabled && isTesting;
+	const meterVisible = isMicEnabled && (isTesting || isRecording);
+	const showMicReady = isMicEnabled && isTesting;
+	const showTestMicButton = !isRecording;
 	const meterPercent = Math.round(Math.min(level * 100, 100));
 	const meterSegmentCount = 24;
 	const activeSegments = Math.round((meterPercent / 100) * meterSegmentCount);
@@ -523,24 +525,26 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({
 									</label>
 								</div>
 
-								{(isTesting || isRecording) && isMicEnabled && (
+								{showMicReady && (
 									<div className="ll-recording-ready">
 										<span className="ll-recording-ready-dot" />
 										<span>Mic ready</span>
 									</div>
 								)}
 
-								<button
-									className={`ll-btn ll-btn-record ll-btn-test-mic${isTesting ? ' ll-btn-mic-active' : ''}`}
-									onClick={() => { void testMic(); }}
-									disabled={!isMicEnabled || isSessionActive || isSaving || isSessionTransitioning}
-									aria-label="Test microphone"
-								>
-									<BtnContent
-										icon={<BtnIcon><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M6 10a6 6 0 0 0 12 0" /><path d="M12 19v2" /><path d="M9 21h6" /></BtnIcon>}
-										label={isTesting ? 'Mic on' : 'Test mic'}
-									/>
-								</button>
+								{showTestMicButton && (
+									<button
+										className={`ll-btn ll-btn-record ll-btn-test-mic${isTesting ? ' ll-btn-mic-active' : ''}`}
+										onClick={() => { void testMic(); }}
+										disabled={!isMicEnabled || isSessionActive || isSaving || isSessionTransitioning}
+										aria-label="Test microphone"
+									>
+										<BtnContent
+											icon={<BtnIcon><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M6 10a6 6 0 0 0 12 0" /><path d="M12 19v2" /><path d="M9 21h6" /></BtnIcon>}
+											label={isTesting ? 'Mic on' : 'Test mic'}
+										/>
+									</button>
+								)}
 
 								{meterVisible && (
 									<div className="ll-level-meter-wrap" aria-label={`Microphone level ${meterPercent}%`}>
@@ -575,7 +579,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({
 								{isRecording && (
 									<div className="ll-recording-status">
 										<span className="ll-recording-dot" />
-										<span>Recording</span>
+										<span>RECORDING</span>
 									</div>
 								)}
 
