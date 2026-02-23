@@ -503,7 +503,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({
 								</button>
 							</div>
 
-							<div className="ll-recording-card">
+							<div className={`ll-recording-card${isRecording ? ' ll-recording-card--recording' : showMicReady ? ' ll-recording-card--ready' : ''}`}>
 								<div className="ll-recording-card-head">
 									<div className="ll-recording-card-title">
 										<BtnIcon>
@@ -527,7 +527,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({
 
 								{showMicReady && (
 									<div className="ll-recording-ready">
-										<span className="ll-recording-ready-dot" />
+										<span className="ll-recording-ready-check">✓</span>
 										<span>Mic ready</span>
 									</div>
 								)}

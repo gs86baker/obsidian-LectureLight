@@ -114,9 +114,9 @@ export const PRESENTER_CSS = `
 	background: var(--ll-btn-bg) !important;
 	color: var(--ll-btn-text) !important;
 	font-size: 12px !important;
-	font-weight: 700 !important;
+	font-weight: 600 !important;
 	cursor: pointer !important;
-	transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease !important;
+	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease !important;
 	line-height: 1.4 !important;
 	white-space: nowrap !important;
 	text-align: center !important;
@@ -157,33 +157,34 @@ export const PRESENTER_CSS = `
 	min-width: 100px !important;
 }
 
-.ll-presenter-root .ll-btn-nav .ll-btn-content {
-	transform: translateX(5px) !important;
-}
 
 .ll-presenter-root .ll-btn-start {
-	background: #166534 !important;
-	border-color: #34d399 !important;
-	color: #dcfce7 !important;
-	font-weight: 700 !important;
+	background: rgba(0,0,0,0.2) !important;
+	border-color: transparent !important;
+	color: #ffffff !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.18) !important;
 }
 
 .ll-presenter-root .ll-btn-start:hover:not(:disabled) {
-	background: #15803d !important;
-	border-color: #6ee7b7 !important;
+	background: rgba(0,0,0,0.28) !important;
+	border-color: transparent !important;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.22) !important;
 }
 
 .ll-presenter-root .ll-btn-stop {
-	background: #991b1b !important;
-	border-color: #f87171 !important;
-	color: #fee2e2 !important;
-	font-weight: 700 !important;
+	background: #dc2626 !important;
+	border-color: transparent !important;
+	color: #ffffff !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
 	animation: ll-pulse 1.2s ease-in-out infinite !important;
 }
 
 .ll-presenter-root .ll-btn-stop:hover:not(:disabled) {
 	background: #b91c1c !important;
-	border-color: #fca5a5 !important;
+	border-color: transparent !important;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.25) !important;
 }
 
 .ll-presenter-root .ll-session-start.ll-btn-stop .ll-btn-icon {
@@ -205,21 +206,11 @@ export const PRESENTER_CSS = `
 
 .ll-presenter-root .ll-btn-content {
 	display: flex !important;
-	width: 100% !important;
-	min-width: 0 !important;
 	align-items: center !important;
 	justify-content: center !important;
 	gap: 8px !important;
+	width: 100% !important;
 	line-height: 1 !important;
-	margin: 0 auto !important;
-}
-
-.ll-presenter-root .ll-btn-content::after {
-	content: "" !important;
-	display: block !important;
-	width: 16px !important;
-	height: 16px !important;
-	flex: 0 0 16px !important;
 }
 
 .ll-presenter-root .ll-btn-icon {
@@ -228,13 +219,7 @@ export const PRESENTER_CSS = `
 	justify-content: center !important;
 	width: 16px !important;
 	height: 16px !important;
-	flex: 0 0 16px !important;
-	position: relative !important;
-	top: -1px !important;
-}
-
-.ll-presenter-root .ll-btn-content > .ll-btn-icon {
-	left: 1px !important;
+	flex-shrink: 0 !important;
 }
 
 .ll-presenter-root .ll-btn-icon-svg {
@@ -283,25 +268,62 @@ export const PRESENTER_CSS = `
 	flex: 1 1 auto !important;
 }
 
-.ll-presenter-root .ll-session-start .ll-btn-content {
-	transform: translateX(10px) !important;
-}
-
-.ll-presenter-root .ll-session-reset .ll-btn-content {
-	transform: translateX(10px) !important;
-}
-
+.ll-presenter-root .ll-session-start .ll-btn-content,
+.ll-presenter-root .ll-session-reset .ll-btn-content,
 .ll-presenter-root .ll-btn-filmstrip .ll-btn-content {
 	transform: translateX(10px) !important;
 }
 
-.ll-presenter-root .ll-btn-test-mic .ll-btn-content {
-	transform: translateX(3px) !important;
+
+.ll-presenter-root .ll-btn-filmstrip {
+	background: transparent !important;
+	border-color: rgba(255,255,255,0.3) !important;
+	color: rgba(255,255,255,0.85) !important;
+}
+
+.ll-presenter-root .ll-btn-filmstrip:hover:not(:disabled) {
+	background: rgba(255,255,255,0.1) !important;
+	border-color: rgba(255,255,255,0.5) !important;
+	color: #ffffff !important;
+}
+
+.ll-presenter-root .ll-btn-filmstrip.ll-btn-active {
+	background: rgba(255,255,255,0.15) !important;
+	border-color: rgba(255,255,255,0.4) !important;
+	color: #ffffff !important;
+}
+
+
+.ll-presenter-root .ll-btn-test-mic {
+	background: rgba(255,255,255,0.12) !important;
+	border-color: rgba(255,255,255,0.08) !important;
+	color: rgba(255,255,255,0.9) !important;
+}
+
+.ll-presenter-root .ll-btn-test-mic:hover:not(:disabled) {
+	background: rgba(255,255,255,0.22) !important;
+	border-color: rgba(255,255,255,0.15) !important;
+	color: #ffffff !important;
+}
+
+.ll-presenter-root .ll-btn-test-mic.ll-btn-mic-active {
+	background: rgba(255,255,255,0.22) !important;
+	border-color: rgba(255,255,255,0.2) !important;
+	color: #ffffff !important;
 }
 
 .ll-presenter-root .ll-session-reset {
 	flex: 0 0 auto !important;
 	min-width: 100px !important;
+	background: transparent !important;
+	border-color: rgba(255,255,255,0.3) !important;
+	color: rgba(255,255,255,0.85) !important;
+}
+
+.ll-presenter-root .ll-session-reset:hover:not(:disabled) {
+	background: rgba(255,255,255,0.1) !important;
+	border-color: rgba(255,255,255,0.5) !important;
+	color: #ffffff !important;
 }
 
 @keyframes ll-pulse {
@@ -542,9 +564,6 @@ export const PRESENTER_CSS = `
 	flex: 1 1 auto !important;
 }
 
-.ll-presenter-root .ll-btn-preview-stage .ll-btn-content {
-	transform: translateX(17px) !important;
-}
 
 .ll-presenter-root .ll-btn-preview-theme {
 	flex: 0 0 auto !important;
@@ -896,9 +915,9 @@ export const PRESENTER_CSS = `
 /* ── Mic / recording button ── */
 
 .ll-presenter-root .ll-btn-mic-active {
-	background: #4c1d95 !important;
-	border-color: #a78bfa !important;
-	color: #f3e8ff !important;
+	background: #14532d !important;
+	border-color: #22c55e !important;
+	color: #dcfce7 !important;
 }
 
 /* ── Recording panel (inside timer) ── */
@@ -906,12 +925,22 @@ export const PRESENTER_CSS = `
 .ll-presenter-root .ll-recording-card {
 	background: rgba(255,255,255,0.12) !important;
 	border: 1px solid rgba(255,255,255,0.25) !important;
+	border-left: 3px solid rgba(255,255,255,0.15) !important;
 	border-radius: 10px !important;
 	padding: 12px !important;
 	backdrop-filter: blur(2px) !important;
 	display: flex !important;
 	flex-direction: column !important;
 	gap: 10px !important;
+	transition: border-left-color 0.2s ease !important;
+}
+
+.ll-presenter-root .ll-recording-card--ready {
+	border-left-color: #22c55e !important;
+}
+
+.ll-presenter-root .ll-recording-card--recording {
+	border-left-color: #dc3444 !important;
 }
 
 .ll-presenter-root .ll-recording-card-head {
@@ -930,10 +959,6 @@ export const PRESENTER_CSS = `
 	color: #f8fafc !important;
 }
 
-.ll-presenter-root .ll-recording-card-title .ll-btn-icon-svg {
-	position: relative !important;
-	top: -3px !important;
-}
 
 .ll-presenter-root .ll-recording-enable {
 	display: inline-flex !important;
@@ -955,14 +980,13 @@ export const PRESENTER_CSS = `
 	width: 16px !important;
 	height: 16px !important;
 	border-radius: 4px !important;
-	border: 1px solid rgba(255,255,255,0.5) !important;
-	background: rgba(15, 35, 56, 0.9) !important;
+	border: 1px solid rgba(255,255,255,0.4) !important;
+	background: rgba(255,255,255,0.12) !important;
 	display: inline-grid !important;
 	place-content: center !important;
 	cursor: pointer !important;
 	outline: none !important;
-	box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05) !important;
-	transition: background-color 0.12s, border-color 0.12s, box-shadow 0.12s !important;
+	transition: background-color 0.2s, border-color 0.2s !important;
 }
 
 .ll-presenter-root .ll-recording-enable input::before {
@@ -972,16 +996,15 @@ export const PRESENTER_CSS = `
 	background-repeat: no-repeat !important;
 	background-position: center !important;
 	background-size: contain !important;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3 3 7-7' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3 3 7-7' fill='none' stroke='%23166534' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
 	opacity: 0 !important;
-	transform: scale(0.9) !important;
-	transition: opacity 0.12s ease-out, transform 0.12s ease-out !important;
+	transform: scale(0.8) !important;
+	transition: opacity 0.15s ease-out, transform 0.15s ease-out !important;
 }
 
 .ll-presenter-root .ll-recording-enable input:checked {
-	background: #2563eb !important;
-	border-color: #bfdbfe !important;
-	box-shadow: inset 0 0 0 1px rgba(219, 234, 254, 0.2) !important;
+	background: rgba(255,255,255,0.92) !important;
+	border-color: rgba(255,255,255,0.92) !important;
 }
 
 .ll-presenter-root .ll-recording-enable input:checked::before {
@@ -990,13 +1013,11 @@ export const PRESENTER_CSS = `
 }
 
 .ll-presenter-root .ll-recording-enable input:focus-visible {
-	box-shadow:
-		0 0 0 2px rgba(191, 219, 254, 0.55),
-		inset 0 0 0 1px rgba(255,255,255,0.08) !important;
+	box-shadow: 0 0 0 2px rgba(255,255,255,0.4) !important;
 }
 
 .ll-presenter-root .ll-recording-enable input:disabled {
-	opacity: 0.55 !important;
+	opacity: 0.45 !important;
 	cursor: not-allowed !important;
 }
 
@@ -1010,11 +1031,11 @@ export const PRESENTER_CSS = `
 	margin-top: 0 !important;
 }
 
-.ll-presenter-root .ll-recording-ready-dot {
-	width: 7px !important;
-	height: 7px !important;
-	border-radius: 50% !important;
-	background: #22c55e !important;
+.ll-presenter-root .ll-recording-ready-check {
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	color: #4ade80 !important;
+	line-height: 1 !important;
 }
 
 .ll-presenter-root .ll-level-meter-wrap {
