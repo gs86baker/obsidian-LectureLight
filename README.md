@@ -7,6 +7,7 @@ Professional presentation console for Obsidian. Turn any Markdown note into a sl
 ## Authorship and contributors
 
 This plugin was conceptualized by Greg Baker, who also wrote parts of the implementation. The majority of production code was co-developed with AI coding assistants, with Codex and Gemini acting as principal co-contributors.
+Claude is not credited as a code contributor on this project, though some early defects originated from Claude-generated suggestions that were later fixed.
 
 ---
 
