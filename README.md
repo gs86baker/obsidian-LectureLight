@@ -128,9 +128,9 @@ The **☀** button in the presenter console header switches the stage between da
 
 ## Installation
 
-1. Download `main.js` and `manifest.json` from the latest release.
+1. Download `main.js`, `manifest.json`, and `styles.css` from the latest release.
 2. Create a folder named `lecturelight` inside your vault's `.obsidian/plugins/` directory.
-3. Copy the two files into that folder.
+3. Copy the three files into that folder.
 4. Reload Obsidian and enable **LectureLight Pro** in **Settings → Community plugins**.
 
 ---
@@ -141,11 +141,11 @@ The **☀** button in the presenter console header switches the stage between da
 npm install
 npm run dev      # watch mode (rebuilds on save)
 npm run build    # production build
-npm test         # 49 Vitest unit tests (parser + wikilinks)
+npm test         # 53 Vitest unit tests (parser + wikilinks)
 npm run lint     # ESLint (0 errors expected)
 ```
 
-Copy `main.js` and `manifest.json` into your vault's plugin folder after each build to test live.
+Copy `main.js`, `manifest.json`, and `styles.css` into your vault's plugin folder after each build to test live.
 
 ---
 
