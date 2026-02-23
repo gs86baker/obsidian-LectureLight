@@ -484,7 +484,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({
 											isSaving
 												? <BtnIcon><path d="M12 4v4" /><path d="M12 16v4" /><path d="M4 12h4" /><path d="M16 12h4" /></BtnIcon>
 												: isSessionActive
-													? <BtnIcon><rect x="7" y="7" width="10" height="10" rx="1" /></BtnIcon>
+													? <BtnIcon><rect x="5" y="5" width="14" height="14" rx="1" fill="currentColor" stroke="none" /></BtnIcon>
 													: <BtnIcon><polygon points="8,5 19,12 8,19" /></BtnIcon>
 										}
 										label={isSaving ? 'Saving…' : isSessionActive ? 'Stop' : 'Start'}
@@ -503,7 +503,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({
 								</button>
 							</div>
 
-							<div className={`ll-recording-card${isRecording ? ' ll-recording-card--recording' : showMicReady ? ' ll-recording-card--ready' : ''}`}>
+							<div className={`ll-recording-card${isRecording ? ' ll-recording-card--recording' : isTesting ? ' ll-recording-card--ready' : ''}`}>
 								<div className="ll-recording-card-head">
 									<div className="ll-recording-card-title">
 										<BtnIcon>
