@@ -10,6 +10,7 @@ import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { logger } from '../lib/logger';
 import { saveRecording, appendSessionLinks } from '../lib/vaultSave';
 import { MAX_TARGET_MINUTES, validateTimerSettings } from '../lib/parser';
+import lectureLightLogo from '../assets/logo.png';
 
 const BtnIcon: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 	<svg
@@ -26,10 +27,23 @@ const BtnIcon: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 	</svg>
 );
 
-const BtnContent: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
+const BtnContent: React.FC<{
+	icon: React.ReactNode;
+	label: string;
+	iconPosition?: 'start' | 'end';
+}> = ({ icon, label, iconPosition = 'start' }) => (
 	<span className="ll-btn-content">
-		<span className="ll-btn-icon">{icon}</span>
-		<span className="ll-btn-text">{label}</span>
+		{iconPosition === 'start' ? (
+			<>
+				<span className="ll-btn-icon">{icon}</span>
+				<span className="ll-btn-text">{label}</span>
+			</>
+		) : (
+			<>
+				<span className="ll-btn-text">{label}</span>
+				<span className="ll-btn-icon">{icon}</span>
+			</>
+		)}
 	</span>
 );
 
@@ -371,7 +385,7 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({
 								{currentSlideIndex + 1} / {slides.length}
 							</span>
 							<button
-								className="ll-btn ll-btn-nav"
+								className="ll-btn ll-btn-nav ll-btn-nav-next"
 								onClick={() => goToSlide(currentSlideIndex + 1)}
 								disabled={currentSlideIndex === slides.length - 1}
 								aria-label="Next slide"
@@ -379,8 +393,12 @@ export const PresenterConsole: React.FC<PresenterConsoleProps> = ({
 								<BtnContent
 									icon={<BtnIcon><polyline points="9 18 15 12 9 6" /></BtnIcon>}
 									label="Next"
+									iconPosition="end"
 								/>
 							</button>
+							</div>
+							<div className="ll-header-brand" aria-hidden="true">
+								<img src={lectureLightLogo} alt="LectureLight" className="ll-header-logo" />
 							</div>
 							<div className="ll-header-right">
 								<button

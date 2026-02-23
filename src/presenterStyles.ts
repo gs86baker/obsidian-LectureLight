@@ -79,6 +79,7 @@ export const PRESENTER_CSS = `
 	border-bottom: 2px solid #2d4a6b !important;
 	flex-shrink: 0 !important;
 	gap: 10px !important;
+	position: relative !important;
 }
 
 .ll-presenter-root .ll-header-left,
@@ -91,6 +92,30 @@ export const PRESENTER_CSS = `
 .ll-presenter-root .ll-header-right {
 	flex-wrap: nowrap !important;
 	justify-content: flex-end !important;
+}
+
+.ll-presenter-root .ll-header-brand {
+	position: absolute !important;
+	left: 50% !important;
+	top: 50% !important;
+	transform: translate(-50%, -50%) !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	pointer-events: none !important;
+}
+
+.ll-presenter-root .ll-header-logo {
+	height: 20px !important;
+	width: auto !important;
+	max-width: 240px !important;
+	opacity: 0.96 !important;
+}
+
+@media (min-width: 768px) {
+	.ll-presenter-root .ll-header-logo {
+		height: 32px !important;
+	}
 }
 
 .ll-presenter-root .ll-slide-counter {
@@ -157,18 +182,27 @@ export const PRESENTER_CSS = `
 	min-width: 100px !important;
 }
 
+.ll-presenter-root .ll-btn-nav .ll-btn-content {
+	justify-content: center !important;
+	transform: translateX(7px) !important;
+}
+
+.ll-presenter-root .ll-btn-nav-next .ll-btn-content {
+	transform: translateX(13px) !important;
+}
+
 
 .ll-presenter-root .ll-btn-start {
-	background: rgba(255,255,255,0.12) !important;
-	border-color: rgba(255,255,255,0.08) !important;
-	color: rgba(255,255,255,0.9) !important;
+	background: transparent !important;
+	border-color: rgba(255,255,255,0.3) !important;
+	color: rgba(255,255,255,0.85) !important;
 	font-weight: 600 !important;
 	box-shadow: none !important;
 }
 
 .ll-presenter-root .ll-btn-start:hover:not(:disabled) {
-	background: rgba(255,255,255,0.22) !important;
-	border-color: rgba(255,255,255,0.15) !important;
+	background: rgba(255,255,255,0.1) !important;
+	border-color: rgba(255,255,255,0.5) !important;
 	color: #ffffff !important;
 	box-shadow: none !important;
 }
@@ -280,18 +314,21 @@ export const PRESENTER_CSS = `
 	background: transparent !important;
 	border-color: rgba(255,255,255,0.3) !important;
 	color: rgba(255,255,255,0.85) !important;
+	box-shadow: none !important;
 }
 
 .ll-presenter-root .ll-btn-filmstrip:hover:not(:disabled) {
 	background: rgba(255,255,255,0.1) !important;
 	border-color: rgba(255,255,255,0.5) !important;
 	color: #ffffff !important;
+	box-shadow: none !important;
 }
 
 .ll-presenter-root .ll-btn-filmstrip.ll-btn-active {
 	background: rgba(255,255,255,0.15) !important;
 	border-color: rgba(255,255,255,0.4) !important;
 	color: #ffffff !important;
+	box-shadow: none !important;
 }
 
 
@@ -299,18 +336,25 @@ export const PRESENTER_CSS = `
 	background: rgba(255,255,255,0.12) !important;
 	border-color: rgba(255,255,255,0.08) !important;
 	color: rgba(255,255,255,0.9) !important;
+	box-shadow: none !important;
 }
 
 .ll-presenter-root .ll-btn-test-mic:hover:not(:disabled) {
 	background: rgba(255,255,255,0.22) !important;
 	border-color: rgba(255,255,255,0.15) !important;
 	color: #ffffff !important;
+	box-shadow: none !important;
 }
 
 .ll-presenter-root .ll-btn-test-mic.ll-btn-mic-active {
 	background: rgba(255,255,255,0.22) !important;
 	border-color: rgba(255,255,255,0.2) !important;
 	color: #ffffff !important;
+	box-shadow: none !important;
+}
+
+.ll-presenter-root .ll-btn-test-mic.ll-btn-mic-active:hover:not(:disabled) {
+	box-shadow: none !important;
 }
 
 .ll-presenter-root .ll-session-reset {
@@ -319,12 +363,14 @@ export const PRESENTER_CSS = `
 	background: transparent !important;
 	border-color: rgba(255,255,255,0.3) !important;
 	color: rgba(255,255,255,0.85) !important;
+	box-shadow: none !important;
 }
 
 .ll-presenter-root .ll-session-reset:hover:not(:disabled) {
 	background: rgba(255,255,255,0.1) !important;
 	border-color: rgba(255,255,255,0.5) !important;
 	color: #ffffff !important;
+	box-shadow: none !important;
 }
 
 @keyframes ll-pulse {
