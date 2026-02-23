@@ -32,3 +32,6 @@ yarn-error.log*
 
 # OS metadata
 Thumbs.db
+
+# Local agent instructions (do not publish)
+AGENTS.md
