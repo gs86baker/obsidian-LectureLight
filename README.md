@@ -1,4 +1,4 @@
-# Obsidian LectureLight Pro
+# LectureLight
 
 Professional presentation console for Obsidian. Turn any Markdown note into a slide deck with a built-in teleprompter, traffic-light timer, film strip, speaker notes, and audience-facing stage window.
 
@@ -83,7 +83,7 @@ Start a session with **Start** to record your microphone alongside the presentat
 
 1. Assembles the audio into a single file (WebM/Opus preferred, MP4 fallback).
 2. Writes a `.session.json` sidecar containing every slide-change event with wall-clock timestamps and elapsed time.
-3. Saves both files to `LectureLight/Recordings/` inside your vault (configurable in **Settings → LectureLight Pro**).
+3. Saves both files to `LectureLight/Recordings/` inside your vault (configurable in **Settings → LectureLight**).
 4. Appends a `## LectureLight session — {date}` section to the active note with Obsidian links to both files so you can play back the audio and open the log without leaving the vault.
 
 Use **Test mic** to check your microphone level (shown as a live bar in the recording panel) without starting a session. The mic is released automatically when the test ends or the pane is closed.
@@ -102,7 +102,7 @@ Counts down from your target time. Color changes signal how you're tracking:
 | **Red** `#dc3444` | Wrap up | ≤ wrapup minutes remaining |
 | **Red ↔ Orange** pulse | Overtime | Past zero |
 
-Configure per note with a `:::lecturelight` block, or set defaults in **Settings → LectureLight Pro**:
+Configure per note with a `:::lecturelight` block, or set defaults in **Settings → LectureLight**:
 
 ```markdown
 :::lecturelight
@@ -137,7 +137,7 @@ The **☀** button in the presenter console header switches the stage between da
 1. Download `main.js`, `manifest.json`, and `styles.css` from the latest release.
 2. Create a folder named `lecturelight` inside your vault's `.obsidian/plugins/` directory.
 3. Copy the three files into that folder.
-4. Reload Obsidian and enable **LectureLight Pro** in **Settings → Community plugins**.
+4. Reload Obsidian and enable **LectureLight** in **Settings → Community plugins**.
 
 ---
 

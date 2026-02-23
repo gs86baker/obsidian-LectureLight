@@ -39,7 +39,7 @@ export default class LectureLightPlugin extends Plugin {
 		);
 
 		// eslint-disable-next-line obsidianmd/ui/sentence-case
-		this.addRibbonIcon('presentation', 'LectureLight Pro', (_evt: MouseEvent) => {
+		this.addRibbonIcon('presentation', 'LectureLight', (_evt: MouseEvent) => {
 			void this.activateView();
 		});
 
@@ -75,7 +75,7 @@ export default class LectureLightPlugin extends Plugin {
 	}
 
 	onunload() {
-		console.debug('[LectureLight] Unloading LectureLight Pro');
+		console.debug('[LectureLight] Unloading LectureLight');
 	}
 
 	async activateView(): Promise<void> {
