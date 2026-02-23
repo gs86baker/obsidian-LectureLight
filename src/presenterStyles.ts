@@ -159,17 +159,18 @@ export const PRESENTER_CSS = `
 
 
 .ll-presenter-root .ll-btn-start {
-	background: rgba(0,0,0,0.2) !important;
-	border-color: transparent !important;
-	color: #ffffff !important;
+	background: rgba(255,255,255,0.12) !important;
+	border-color: rgba(255,255,255,0.08) !important;
+	color: rgba(255,255,255,0.9) !important;
 	font-weight: 600 !important;
-	box-shadow: 0 1px 3px rgba(0,0,0,0.18) !important;
+	box-shadow: none !important;
 }
 
 .ll-presenter-root .ll-btn-start:hover:not(:disabled) {
-	background: rgba(0,0,0,0.28) !important;
-	border-color: transparent !important;
-	box-shadow: 0 2px 6px rgba(0,0,0,0.22) !important;
+	background: rgba(255,255,255,0.22) !important;
+	border-color: rgba(255,255,255,0.15) !important;
+	color: #ffffff !important;
+	box-shadow: none !important;
 }
 
 .ll-presenter-root .ll-btn-stop {
@@ -208,7 +209,7 @@ export const PRESENTER_CSS = `
 	display: flex !important;
 	align-items: center !important;
 	justify-content: center !important;
-	gap: 8px !important;
+	gap: 5px !important;
 	width: 100% !important;
 	line-height: 1 !important;
 }
@@ -329,6 +330,11 @@ export const PRESENTER_CSS = `
 @keyframes ll-pulse {
 	0%, 100% { opacity: 1; }
 	50%       { opacity: 0.65; }
+}
+
+@keyframes ll-border-pulse {
+	0%, 100% { box-shadow: -3px 0 0 0 #dc3444; }
+	50%       { box-shadow: -3px 0 0 0 rgba(220,52,68,0.2); }
 }
 
 /* ── Teleprompter panel ── */
@@ -562,6 +568,10 @@ export const PRESENTER_CSS = `
 
 .ll-presenter-root .ll-btn-preview-stage {
 	flex: 1 1 auto !important;
+}
+
+.ll-presenter-root .ll-btn-preview-stage .ll-btn-content {
+	transform: translateX(13px) !important;
 }
 
 
@@ -925,22 +935,20 @@ export const PRESENTER_CSS = `
 .ll-presenter-root .ll-recording-card {
 	background: rgba(255,255,255,0.12) !important;
 	border: 1px solid rgba(255,255,255,0.25) !important;
-	border-left: 3px solid rgba(255,255,255,0.15) !important;
 	border-radius: 10px !important;
 	padding: 12px !important;
 	backdrop-filter: blur(2px) !important;
 	display: flex !important;
 	flex-direction: column !important;
 	gap: 10px !important;
-	transition: border-left-color 0.2s ease !important;
 }
 
 .ll-presenter-root .ll-recording-card--ready {
-	border-left-color: #22c55e !important;
+	animation: ll-border-pulse 2s ease-in-out infinite !important;
 }
 
 .ll-presenter-root .ll-recording-card--recording {
-	border-left-color: #dc3444 !important;
+	box-shadow: -3px 0 0 0 #dc3444 !important;
 }
 
 .ll-presenter-root .ll-recording-card-head {
