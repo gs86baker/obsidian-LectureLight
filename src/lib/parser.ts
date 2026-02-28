@@ -30,22 +30,29 @@ export function countSpeakableWords(markdown: string): number {
 	const lines = markdown.split('\n');
 	let mode: 'NOTES' | 'SLIDE' | 'CONFIG' | 'SPEAKER_NOTES' = 'NOTES';
 	const notesText: string[] = [];
+	const notesDirectiveRegex = /^:::\s*notes(?:\s*\[[^\]]*\])?(?:\s*:::)?\s*$/i;
+	const notesDirectiveToggleRegex = /^:::\s*notes(?:\s*\[[^\]]*\])?\s*:::\s*$/i;
 
 	for (const line of lines) {
 		const trimmed = line.trim();
 
 		if (mode === 'NOTES') {
-			if (trimmed.match(/^:::\s*slide/)) {
+			if (trimmed === ':::') {
+				continue;
+			}
+			if (trimmed.match(/^:::\s*slide\b/i)) {
 				mode = 'SLIDE';
-			} else if (trimmed.match(/^:::\s*lecturelight/)) {
+			} else if (trimmed.match(/^:::\s*lecturelight\b/i)) {
 				mode = 'CONFIG';
-			} else if (trimmed.match(/^:::\s*notes/)) {
+			} else if (notesDirectiveRegex.test(trimmed)) {
 				mode = 'SPEAKER_NOTES';
 			} else {
 				notesText.push(line);
 			}
 		} else if (mode === 'CONFIG' || mode === 'SLIDE' || mode === 'SPEAKER_NOTES') {
-			if (trimmed === ':::') mode = 'NOTES';
+			if (trimmed === ':::' || (mode === 'SPEAKER_NOTES' && notesDirectiveToggleRegex.test(trimmed))) {
+				mode = 'NOTES';
+			}
 		}
 	}
 
@@ -126,6 +133,8 @@ export function parseMarkdownToSlides(markdown: string): ParseResult {
 
 	const lines = markdown.split('\n');
 	const slides: Slide[] = [];
+	const notesStartRegex = /^:::\s*notes(?:\s*\[([^\]]*)\])?(?:\s*:::)?\s*$/i;
+	const notesToggleRegex = /^:::\s*notes(?:\s*\[[^\]]*\])?\s*:::\s*$/i;
 
 	// Extract :::lecturelight config block
 	let timerSettings: ParseResult['timerSettings'] = null;
@@ -221,14 +230,17 @@ export function parseMarkdownToSlides(markdown: string): ParseResult {
 		const trimmed = line.trim();
 
 		if (mode === 'NOTES') {
+			if (trimmed === ':::') {
+				continue;
+			}
 			// Match: :::slide [Optional Label] [bleed]
-			const slideStart = trimmed.match(/^:::\s*slide(?:\s*\[([^\]]*)\])?(?:\s+(bleed))?/);
-			const configStart = trimmed.match(/^:::\s*lecturelight/);
-			const notesStart = trimmed.match(/^:::\s*notes(?:\s*\[([^\]]*)\])?/);
+			const slideStart = trimmed.match(/^:::\s*slide(?:\s*\[([^\]]*)\])?(?:\s+(bleed))?/i);
+			const configStart = trimmed.match(/^:::\s*lecturelight\b/i);
+			const notesStart = trimmed.match(notesStartRegex);
 			if (slideStart) {
 				mode = 'SLIDE';
 				currentSlideLabel = slideStart[1] ?? '';
-				currentSlideBleed = slideStart[2] === 'bleed';
+				currentSlideBleed = (slideStart[2] ?? '').toLowerCase() === 'bleed';
 			} else if (configStart) {
 				// Silently consume the config block — values already extracted via regex above
 				mode = 'CONFIG';
@@ -249,7 +261,7 @@ export function parseMarkdownToSlides(markdown: string): ParseResult {
 				currentSlideRaw.push(line);
 			}
 		} else if (mode === 'SPEAKER_NOTES') {
-			if (trimmed === ':::') {
+			if (trimmed === ':::' || notesToggleRegex.test(trimmed)) {
 				flushSpeakerNotes();
 				mode = 'NOTES';
 			} else {

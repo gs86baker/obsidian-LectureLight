@@ -167,7 +167,7 @@ export class LectureLightStageView extends ItemView {
 	getDisplayText(): string { return 'Stage'; }
 	getIcon(): string      { return 'monitor'; }
 
-	async onOpen(): Promise<void> {
+	onOpen(): Promise<void> {
 		// Use the ownerDocument/window of the container so this works correctly
 		// in both the main window and popout windows.
 		const doc = this.contentEl.ownerDocument;
@@ -199,8 +199,7 @@ export class LectureLightStageView extends ItemView {
 		const fsBar = viewport.createDiv({ cls: 'ls-fs-bar' });
 		const fsBtn = fsBar.createEl('button', {
 			cls:  'ls-fs-btn',
-			// eslint-disable-next-line obsidianmd/ui/sentence-case
-			text: '⊡  Go fullscreen  ·  F',
+			text: 'Go full screen',
 		});
 
 		// ── Scale canvas to fill viewport at any resolution ───────────────────
@@ -242,8 +241,11 @@ export class LectureLightStageView extends ItemView {
 				}
 				waiting.classList.add('ls-hidden');
 				content.classList.add('ls-visible');
-				// eslint-disable-next-line @microsoft/sdl/no-inner-html
-				content.innerHTML = purify.sanitize(msg.htmlContent ?? '');
+				const sanitized = purify.sanitize(msg.htmlContent ?? '');
+				const range = content.ownerDocument.createRange();
+				range.selectNode(content);
+				const fragment = range.createContextualFragment(sanitized);
+				content.replaceChildren(fragment);
 				content.classList.toggle('ls-layout-bleed', msg.layout === 'bleed');
 			} else if (msg.type === 'theme-change') {
 				canvas.classList.toggle('ls-light', msg.light ?? false);
@@ -283,10 +285,12 @@ export class LectureLightStageView extends ItemView {
 		this.registerDomEvent(viewport, 'keydown', (e: KeyboardEvent) => {
 			if (e.key === 'f' || e.key === 'F') toggleFullscreen();
 		});
+		return Promise.resolve();
 	}
 
-	async onClose(): Promise<void> {
+	onClose(): Promise<void> {
 		this.channel?.close();
 		this.channel = null;
+		return Promise.resolve();
 	}
 }

@@ -1,6 +1,8 @@
 import esbuild from "esbuild";
 import process from "process";
 import { builtinModules } from 'node:module';
+import path from 'node:path';
+import { copyFile, readFile, stat, writeFile } from 'node:fs/promises';
 
 const banner =
 `/*
@@ -10,6 +12,61 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
+const devPluginDir = (process.env.LECTURELIGHT_PLUGIN_DIR || "").trim();
+const resolvedPluginDir = devPluginDir ? path.resolve(devPluginDir) : "";
+const outfile = resolvedPluginDir ? path.join(resolvedPluginDir, "main.js") : "main.js";
+
+if (resolvedPluginDir) {
+	try {
+		const info = await stat(resolvedPluginDir);
+		if (!info.isDirectory()) {
+			throw new Error(`${resolvedPluginDir} is not a directory`);
+		}
+	} catch (err) {
+		console.error(
+			"[LectureLight] LECTURELIGHT_PLUGIN_DIR is set but is not a readable directory:",
+			resolvedPluginDir,
+			err
+		);
+		process.exit(1);
+	}
+}
+
+async function syncPresenterStylesCss() {
+	const sourcePath = path.resolve('src/presenterStyles.ts');
+	const targetPath = path.resolve('styles.css');
+	const source = await readFile(sourcePath, 'utf8');
+	const match = source.match(/export const PRESENTER_CSS = `([\s\S]*)`;\s*$/);
+	if (!match) {
+		throw new Error('Could not extract PRESENTER_CSS from src/presenterStyles.ts');
+	}
+	const css = match[1].replace(/^\r?\n/, '');
+	await writeFile(targetPath, css, 'utf8');
+}
+
+try {
+	await syncPresenterStylesCss();
+} catch (err) {
+	console.error('[LectureLight] Failed to generate styles.css:', err);
+	process.exit(1);
+}
+
+function deployReleaseArtifactsPlugin() {
+	return {
+		name: "lecturelight-deploy-release-artifacts",
+		setup(build) {
+			build.onEnd(async (result) => {
+				if (!resolvedPluginDir) return;
+				if (result.errors.length > 0) return;
+
+				await Promise.all([
+					copyFile("manifest.json", path.join(resolvedPluginDir, "manifest.json")),
+					copyFile("styles.css", path.join(resolvedPluginDir, "styles.css")).catch(() => undefined),
+				]);
+			});
+		},
+	};
+}
 
 const context = await esbuild.context({
 	banner: {
@@ -41,8 +98,9 @@ const context = await esbuild.context({
 	loader: {
 		'.png': 'dataurl',
 	},
-	outfile: "main.js",
+	outfile,
 	minify: prod,
+	plugins: resolvedPluginDir ? [deployReleaseArtifactsPlugin()] : [],
 });
 
 if (prod) {

@@ -5,7 +5,6 @@ import { resolveWikilinks } from "./lib/wikilinks";
 import { ParseResult } from "./types";
 import { LectureLightView, VIEW_TYPE_PRESENTER } from "./view";
 import { LectureLightStageView, VIEW_TYPE_STAGE } from "./stageView";
-import { PRESENTER_CSS } from "./presenterStyles";
 
 export default class LectureLightPlugin extends Plugin {
 	settings: LectureLightSettings;
@@ -17,14 +16,6 @@ export default class LectureLightPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-
-		// Inject presenter styles via JS so they're always in sync with main.js.
-		// eslint-disable-next-line obsidianmd/no-forbidden-elements
-		const styleEl = document.createElement('style');
-		styleEl.id = 'll-presenter-styles';
-		styleEl.textContent = PRESENTER_CSS;
-		document.head.appendChild(styleEl);
-		this.register(() => styleEl.remove());
 
 		// Register the presenter view
 		this.registerView(
@@ -38,8 +29,7 @@ export default class LectureLightPlugin extends Plugin {
 			(leaf: WorkspaceLeaf) => new LectureLightStageView(leaf)
 		);
 
-		// eslint-disable-next-line obsidianmd/ui/sentence-case
-		this.addRibbonIcon('presentation', 'LectureLight', (_evt: MouseEvent) => {
+		this.addRibbonIcon('presentation', 'Open lecture light presenter', (_evt: MouseEvent) => {
 			void this.activateView();
 		});
 

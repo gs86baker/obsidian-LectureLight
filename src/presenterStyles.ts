@@ -184,11 +184,12 @@ export const PRESENTER_CSS = `
 
 .ll-presenter-root .ll-btn-nav .ll-btn-content {
 	justify-content: center !important;
-	transform: translateX(7px) !important;
+	width: 100% !important;
+	transform: none !important;
 }
 
 .ll-presenter-root .ll-btn-nav-next .ll-btn-content {
-	transform: translateX(13px) !important;
+	transform: none !important;
 }
 
 

@@ -20,25 +20,26 @@ export class LectureLightView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		// eslint-disable-next-line obsidianmd/ui/sentence-case
-		return 'LectureLight';
+		return 'Lecture light presenter';
 	}
 
 	getIcon(): string {
 		return 'presentation';
 	}
 
-	async onOpen(): Promise<void> {
+	onOpen(): Promise<void> {
 		const container = this.containerEl.children[1] as HTMLElement;
 		container.empty();
 		container.addClass('ll-presenter-root');
 		this.reactRoot = createRoot(container);
 		this.renderReact();
+		return Promise.resolve();
 	}
 
-	async onClose(): Promise<void> {
+	onClose(): Promise<void> {
 		this.reactRoot?.unmount();
 		this.reactRoot = null;
+		return Promise.resolve();
 	}
 
 	/** Called by the plugin after every successful parse. */

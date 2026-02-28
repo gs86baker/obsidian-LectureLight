@@ -77,8 +77,7 @@ export class LectureLightSettingTab extends PluginSettingTab {
 			.setName('Recordings folder')
 			.setDesc('Vault folder where audio recordings and session logs are saved.')
 			.addText(text => text
-				// eslint-disable-next-line obsidianmd/ui/sentence-case
-				.setPlaceholder('LectureLight/Recordings')
+				.setPlaceholder('Recordings folder')
 				.setValue(this.plugin.settings.recordingFolder)
 				.onChange(async (value) => {
 					this.plugin.settings.recordingFolder = value.trim() || DEFAULT_SETTINGS.recordingFolder;

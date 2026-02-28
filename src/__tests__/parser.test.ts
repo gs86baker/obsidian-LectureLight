@@ -268,6 +268,19 @@ Label-matched notes for intro.
 :::
 `;
 
+		const FIXTURE_NOTES_TOGGLE = `:::slide [Intro]
+# Hello
+:::
+
+:::notes :::
+Toggle-style speaker notes for intro.
+:::notes :::
+
+:::slide [Second]
+# Second
+:::
+`;
+
 		it('assigns positional :::notes to the preceding slide', () => {
 			const result = parseMarkdownToSlides(FIXTURE_NOTES_POSITIONAL);
 			expect(result.slides[0]?.speakerNotesHtml).toBeDefined();
@@ -293,6 +306,30 @@ Label-matched notes for intro.
 		it('does not include :::notes content in slide teleprompter notes', () => {
 			const result = parseMarkdownToSlides(FIXTURE_NOTES_POSITIONAL);
 			expect(result.slides[0]?.notes).not.toContain('positional notes');
+		});
+
+		it('supports toggle-style :::notes ::: blocks', () => {
+			const result = parseMarkdownToSlides(FIXTURE_NOTES_TOGGLE);
+			expect(result.slides).toHaveLength(2);
+			expect(result.slides[0]?.speakerNotesHtml).toContain('Toggle-style speaker notes');
+			expect(result.slides[1]?.speakerNotesHtml).toBeUndefined();
+		});
+
+		it('does not leak orphan ::: markers into teleprompter notes', () => {
+			const input = `:::slide [One]
+# One
+:::
+
+:::
+Between-slide teleprompter notes.
+
+:::slide [Two]
+# Two
+:::`;
+			const result = parseMarkdownToSlides(input);
+			expect(result.slides).toHaveLength(2);
+			expect(result.slides[1]?.notes).toContain('Between-slide teleprompter notes.');
+			expect(result.slides[1]?.notes).not.toContain(':::');
 		});
 	});
 
@@ -343,6 +380,11 @@ describe('countSpeakableWords', () => {
 	it('does not count words inside :::notes blocks', () => {
 		const input = `Before.\n:::notes\nThis should not count.\n:::\nAfter.`;
 		// "Before." = 1, "After." = 1
+		expect(countSpeakableWords(input)).toBe(2);
+	});
+
+	it('does not count words inside toggle-style :::notes ::: blocks', () => {
+		const input = `Before.\n:::notes :::\nHidden words here.\n:::notes :::\nAfter.`;
 		expect(countSpeakableWords(input)).toBe(2);
 	});
 });
